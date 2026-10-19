@@ -12,6 +12,8 @@ const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePa
 const page = await browser.newPage({ viewport: { width: 1200, height: 700 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
+// Block web fonts so layout (and the restored scroll offset) doesn't depend on whether they've loaded yet.
+await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
 
 await page.goto(page_url);
 await page.selectOption('#perUnit', 'sec');
