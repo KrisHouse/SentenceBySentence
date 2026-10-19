@@ -361,6 +361,14 @@ if(!state.books.sample) state.books.sample={name:"The Keeper at Gannet Rock (sam
 if(state.log.some(e=>!e.id)){state.log.forEach(e=>{if(!e.id){e.id="legacy_"+e.start+"_"+e.ms;e.updatedAt=e.start}});save(K_STATE,state)}
 if(!state.devices){state.devices={};save(K_STATE,state)}
 if(!state.deletedLog){state.deletedLog={};save(K_STATE,state)} // tombstones: id -> deletion time, so sync can't bring a session back
+// Sync timestamps: books and settings remember when they last changed; removed stories leave a tombstone.
+if(!state.removedBooks){
+  state.removedBooks={};
+  for(const id in state.books){const b=state.books[id]; if(b.updatedAt===undefined)b.updatedAt=0; if(b.readAtAt===undefined)b.readAtAt=0}
+  // 1 rather than 0 for customized settings, so a new device's defaults never win over them.
+  state.settingsAt=(state.focusMin!==25||state.perSec!==60||state.perUnit!=="min"||state.breakMin!==5)?1:0;
+  save(K_STATE,state);
+}
 const rnd=n=>{let s="";while(s.length<n)s+=Math.random().toString(36).slice(2);return s.slice(0,n)};
 function uaName(){
   const ua=navigator.userAgent||"";
@@ -500,14 +508,17 @@ function stopFocus(){
   b.carryMs=total%perMs();
   const earned=b.revealed-before;
   const now=Date.now();
+  b.updatedAt=now;
   state.log.push({id:newLogId(),start:run.startEpoch,end:now,ms:elapsed,planned:run.plannedMs,task:run.task,
     earned,bookId:state.activeId,bookName:b.name,device:device.id,updatedAt:now});
   persist();
   run={mode:"summary",task:run.task,plannedMs:run.plannedMs,elapsedMs:elapsed,earned,lastTask:run.task};
   persistRun(); holdWake(false); renderControls(); renderLog(); tick(true);
+  requestSync(0,true);
 }
 // After any edit to the log: save, then refresh the Focus list and (if open) History.
-function logChanged(){persist(); renderLog(); if(view==="history") renderHistory()}
+function logChanged(){persist(); renderLog(); if(view==="history") renderHistory(); requestSync(2000,true)}
+function settingsChanged(){state.settingsAt=Date.now(); persist(); requestSync(2000,true)}
 function startBreak(min){
   min=Math.max(1,Math.round(min||5));
   run={mode:"break",plannedMs:min*60000,startedAt:Date.now(),lastTask:run.lastTask||run.task||""};
@@ -539,12 +550,12 @@ function renderControls(){
           <div class="row"><input type="number" class="num" id="brkIn" min="1" max="120" value="${state.breakMin}"><span class="unit">min</span></div></div>
       </div>
       <button class="btn" id="go">Start focus</button>`;
-    c.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.focusMin=+b.dataset.p;persist();$("focusIn").value=state.focusMin;c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===b));tick(true)});
-    $("focusIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=480){state.focusMin=v;persist();c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.p===v));tick(true)}};
+    c.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.focusMin=+b.dataset.p;settingsChanged();$("focusIn").value=state.focusMin;c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===b));tick(true)});
+    $("focusIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=480){state.focusMin=v;settingsChanged();c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.p===v));tick(true)}};
     const setPer=()=>{
       const u=$("perUnit").value, v=+$("perIn").value;
       const sec=Math.round(u==="min"?v*60:v);
-      if(v>0&&sec>=1&&sec<=7200){state.perSec=sec;state.perUnit=u;persist();renderBook(false);tick(true)}
+      if(v>0&&sec>=1&&sec<=7200){state.perSec=sec;state.perUnit=u;settingsChanged();renderBook(false);tick(true)}
     };
     $("perIn").oninput=setPer;
     $("perUnit").onchange=()=>{
@@ -554,7 +565,7 @@ function renderControls(){
       inp.max=u==="min"?120:3600;
       setPer();
     };
-    $("brkIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=120){state.breakMin=v;persist()}};
+    $("brkIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=120){state.breakMin=v;settingsChanged()}};
     $("taskIn").oninput=e=>{state.task=e.target.value;persist()};
     $("taskIn").onkeydown=e=>{if(e.key==="Enter")startFocus()};
     $("go").onclick=startFocus;
@@ -699,7 +710,7 @@ let readT;
 $("sheet").addEventListener("scroll",()=>{
   clearTimeout(readT);
   if(view!=="focus") return;
-  readT=setTimeout(()=>{if(view!=="focus")return;const i=topSentence(); if(i!==null){const b=book(); if(b.readAt!==i){b.readAt=$("sheet").scrollTop<4?0:i;persist()}}},250);
+  readT=setTimeout(()=>{if(view!=="focus")return;const i=topSentence(); if(i!==null){const b=book(); if(b.readAt!==i){b.readAt=$("sheet").scrollTop<4?0:i;b.readAtAt=Date.now();persist();requestSync(30000,true)}}},250);
 },{passive:true});
 $("jumpBtn").onclick=()=>{
   const sheet=$("sheet"), latest=$("prose").querySelector(".s.latest");
@@ -735,9 +746,10 @@ $("confirmYes").onclick=()=>{
   if(id==="sample"||run.mode==="focus"||!state.books[id]) return;
   const name=state.books[id].name;
   delete state.books[id]; delete texts[id];
+  state.removedBooks[id]=Date.now();
   try{localStorage.removeItem(K_TEXT+id)}catch(e){}
   state.activeId=Object.keys(state.books).find(x=>x!=="sample")||"sample";
-  persist();
+  persist(); requestSync(2000,true);
   $("confirmBox").hidden=true;
   const note=$("bookNote"); note.textContent=`Removed “${name}”.`; note.className="note";
   renderBookList(); lastShown=-1; tick(true);
@@ -835,8 +847,9 @@ $("fileIn").onchange=e=>{
       const parsed=splitSentences(raw);
       if(!parsed.length){$("bookNote").textContent=`“${f.name}” has no readable story text.`;$("bookNote").className="note warn";return}
       texts[id]=parsed;
-      if(!state.books[id]) state.books[id]={name:story.title,author:story.author,fileName:f.name,revealed:0,carryMs:0,readAt:0};
-      state.activeId=id; persist();
+      if(!state.books[id]) state.books[id]={name:story.title,author:story.author,fileName:f.name,revealed:0,carryMs:0,readAt:0,updatedAt:Date.now(),readAtAt:0};
+      else state.books[id].updatedAt=Date.now();
+      state.activeId=id; persist(); requestSync(2000,true);
       const ok=saveRaw(K_TEXT+id,raw);
       const note=$("bookNote");
       if(!ok&&!warned){warned=true;note.textContent=`“${f.name}” is too large to keep in this browser. It works now; after a reload, add it again and your place is restored.`;note.className="note warn"}
@@ -1076,6 +1089,233 @@ $("csvBtn").onclick=()=>{
   setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 };
 
+/* ---------- sync merge ---------- */
+// mergeSyncData is pure (no DOM, storage or clock) and commutative, associative and idempotent, so any order
+// of syncs converges. Every "pick one side" rule has a deterministic tie-break on canon() for equal timestamps.
+// Book records are never dropped: a book that lost to a removal moves to hiddenBooks, so its data still joins
+// correctly if it is re-added later (dropping it would make the result depend on merge order).
+const SYNC_FILE="sentence-by-sentence.json", SYNC_SCHEMA=1, SYNC_APP="sentence-by-sentence";
+const isNum=v=>typeof v==="number"&&isFinite(v);
+const isObj=v=>!!v&&typeof v==="object"&&!Array.isArray(v);
+function canon(v){
+  if(Array.isArray(v)) return "["+v.map(canon).join(",")+"]";
+  if(isObj(v)) return "{"+Object.keys(v).filter(k=>v[k]!==undefined).sort().map(k=>JSON.stringify(k)+":"+canon(v[k])).join(",")+"}";
+  return JSON.stringify(v===undefined?null:v);
+}
+function normEntry(e){
+  if(!isObj(e)||typeof e.id!=="string"||!e.id||!isNum(e.start)) return null;
+  const o={id:e.id,start:e.start,ms:isNum(e.ms)?e.ms:0,task:typeof e.task==="string"?e.task:"",updatedAt:isNum(e.updatedAt)?e.updatedAt:e.start};
+  for(const k of ["end","planned","earned"]) if(isNum(e[k])) o[k]=e[k];
+  for(const k of ["bookId","bookName","device"]) if(typeof e[k]==="string") o[k]=e[k];
+  return o;
+}
+function normBook(b){
+  if(!isObj(b)||!isNum(b.revealed)) return null;
+  const o={name:typeof b.name==="string"?b.name:"",revealed:Math.max(0,Math.floor(b.revealed)),carryMs:isNum(b.carryMs)?Math.max(0,b.carryMs):0,
+    updatedAt:isNum(b.updatedAt)?b.updatedAt:0,readAtAt:isNum(b.readAtAt)?b.readAtAt:0};
+  if(typeof b.author==="string"&&b.author) o.author=b.author;
+  if(typeof b.fileName==="string"&&b.fileName) o.fileName=b.fileName;
+  if(isNum(b.readAt)&&b.readAt>=0) o.readAt=Math.floor(b.readAt);
+  return o;
+}
+function normSettings(s){
+  if(!isObj(s)||!isNum(s.focusMin)||!isNum(s.perSec)||!isNum(s.breakMin)||(s.perUnit!=="min"&&s.perUnit!=="sec")) return null;
+  return {focusMin:s.focusMin,perSec:s.perSec,perUnit:s.perUnit,breakMin:s.breakMin,updatedAt:isNum(s.updatedAt)?s.updatedAt:0};
+}
+// x vs y by timestamp, then by canonical form; returns the winner.
+function lww(x,y,tx,ty){return tx!==ty?(tx>ty?x:y):(canon(x)>=canon(y)?x:y)}
+function joinBook(x,y){
+  const prog=(x.revealed>y.revealed||(x.revealed===y.revealed&&x.carryMs>=y.carryMs))?x:y;
+  const ra=v=>v.readAt===undefined?-1:v.readAt;
+  const rd=(x.readAtAt>y.readAtAt||(x.readAtAt===y.readAtAt&&ra(x)>=ra(y)))?x:y;
+  const meta=lww({name:x.name,author:x.author,fileName:x.fileName},{name:y.name,author:y.author,fileName:y.fileName},x.updatedAt,y.updatedAt);
+  const o={name:meta.name,revealed:prog.revealed,carryMs:prog.carryMs,updatedAt:Math.max(x.updatedAt,y.updatedAt),readAtAt:Math.max(x.readAtAt,y.readAtAt)};
+  if(meta.author) o.author=meta.author;
+  if(meta.fileName) o.fileName=meta.fileName;
+  if(rd.readAt!==undefined) o.readAt=rd.readAt;
+  return o;
+}
+function maxMap(into,m){if(isObj(m))for(const k in m)if(isNum(m[k]))into[k]=k in into?Math.max(into[k],m[k]):m[k]}
+const sortKeys=m=>{const o={};Object.keys(m).sort().forEach(k=>o[k]=m[k]);return o};
+function mergeSyncData(a,b){
+  const deletedLog={}, removedBooks={}, log={}, books={}, devices={};
+  let settings=null, updatedAt=0;
+  for(const d of [a,b]){
+    if(!isObj(d)) continue;
+    if(isNum(d.updatedAt)) updatedAt=Math.max(updatedAt,d.updatedAt);
+    maxMap(deletedLog,d.deletedLog); maxMap(removedBooks,d.removedBooks);
+    for(const raw of Array.isArray(d.log)?d.log:[]){
+      const e=normEntry(raw); if(!e) continue;
+      const c=log[e.id]; log[e.id]=c?lww(c,e,c.updatedAt,e.updatedAt):e;
+    }
+    for(const src of [d.books,d.hiddenBooks]) if(isObj(src)) for(const id in src){
+      const nb=normBook(src[id]); if(nb) books[id]=books[id]?joinBook(books[id],nb):nb;
+    }
+    const s=normSettings(d.settings);
+    if(s) settings=settings?lww(settings,s,settings.updatedAt,s.updatedAt):s;
+    if(isObj(d.devices)) for(const id in d.devices){
+      const n=d.devices[id]; if(typeof n!=="string") continue;
+      devices[id]=devices[id]===undefined||n>devices[id]?n:devices[id];
+    }
+  }
+  const out={app:SYNC_APP,schema:SYNC_SCHEMA,updatedAt,
+    log:Object.values(log).filter(e=>!(e.id in deletedLog)).sort((x,y)=>x.start-y.start||(x.id<y.id?-1:x.id>y.id?1:0)),
+    deletedLog:sortKeys(deletedLog),books:{},hiddenBooks:{},removedBooks:sortKeys(removedBooks),devices:sortKeys(devices)};
+  for(const id of Object.keys(books).sort()){
+    const kept=!(id in removedBooks)||books[id].updatedAt>removedBooks[id];
+    (kept?out.books:out.hiddenBooks)[id]=books[id];
+  }
+  if(settings) out.settings=settings;
+  return out;
+}
+// Local state as a sync doc. Only this device's own name is sent, so only its owner ever writes it.
+function toSyncDoc(){
+  const books={};
+  for(const id in state.books){const b=state.books[id];books[id]={name:b.name,author:b.author,fileName:b.fileName,revealed:b.revealed,carryMs:b.carryMs,updatedAt:b.updatedAt||0,readAt:b.readAt,readAtAt:b.readAtAt||0}}
+  return {app:SYNC_APP,schema:SYNC_SCHEMA,log:state.log,deletedLog:state.deletedLog,books,removedBooks:state.removedBooks,
+    settings:{focusMin:state.focusMin,perSec:state.perSec,perUnit:state.perUnit,breakMin:state.breakMin,updatedAt:state.settingsAt||0},
+    devices:{[device.id]:device.name}};
+}
+// Writes a merged doc back into local state, keeping local-only fields. Returns what changed, for the status line.
+function applySyncDoc(m){
+  const res={newSessions:0,storiesChanged:0,settingsChanged:false};
+  const had=new Set(state.log.map(e=>e.id));
+  res.newSessions=m.log.filter(e=>!had.has(e.id)).length;
+  state.log=m.log.map(e=>Object.assign({},e));
+  state.deletedLog=Object.assign({},m.deletedLog);
+  state.removedBooks=Object.assign({},m.removedBooks);
+  state.devices=Object.assign({},m.devices);
+  const hold=run.mode==="focus"?state.activeId:null; // never pull the open story out from under a running session
+  for(const id in m.books){
+    const r=m.books[id], b=state.books[id];
+    if(!b){state.books[id]=Object.assign({},r);res.storiesChanged++;continue}
+    if(b.revealed!==r.revealed||b.carryMs!==r.carryMs||b.readAt!==r.readAt||b.name!==r.name) res.storiesChanged++;
+    for(const k of ["name","author","fileName","revealed","carryMs","updatedAt","readAt","readAtAt"]){if(r[k]===undefined)delete b[k];else b[k]=r[k]}
+  }
+  for(const id of Object.keys(state.books)){
+    if(m.books[id]||id===hold||id==="sample") continue;
+    delete state.books[id]; delete texts[id]; res.storiesChanged++;
+    try{localStorage.removeItem(K_TEXT+id)}catch(e){}
+    if(state.activeId===id){state.activeId=Object.keys(state.books).find(x=>x!=="sample")||"sample";lastShown=-1}
+  }
+  const s=m.settings;
+  // Settings wait until the session ends: changing time per sentence mid-session would change what it earns.
+  if(s&&run.mode!=="focus"&&canon(s)!==canon({focusMin:state.focusMin,perSec:state.perSec,perUnit:state.perUnit,breakMin:state.breakMin,updatedAt:state.settingsAt||0})){
+    Object.assign(state,{focusMin:s.focusMin,perSec:s.perSec,perUnit:s.perUnit,breakMin:s.breakMin,settingsAt:s.updatedAt});
+    res.settingsChanged=true;
+  }
+  persist();
+  renderBookList(); renderLog(); if(view==="history") renderHistory();
+  if(res.settingsChanged&&run.mode==="idle"&&!$("controls").contains(document.activeElement)) renderControls();
+  tick(true);
+  return res;
+}
+
+/* ---------- sync (GitHub gist) ---------- */
+// The token lives only in sbs-sync-v1 on this device. Never log it, and never put it in the state or the gist.
+const K_SYNC="sbs-sync-v1", GH="https://api.github.com";
+const sync=Object.assign({token:"",gistId:"",lastSyncAt:0,lastError:null,pending:false},load(K_SYNC,{}));
+const persistSync=()=>save(K_SYNC,sync);
+let syncBusy=false, syncAgain=false, syncTimer=null, syncDue=0, rateUntil=0, lastReport=null;
+class SyncError extends Error{constructor(kind,message,until){super(message);this.kind=kind;this.until=until}}
+async function gh(method,path,body){
+  const headers={Authorization:"Bearer "+sync.token,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};
+  if(body) headers["Content-Type"]="application/json";
+  let r;
+  try{r=await fetch(GH+path,{method,headers,cache:method==="GET"?"no-store":"default",body:body?JSON.stringify(body):undefined})}
+  catch(e){throw new SyncError("network","Offline — will sync when back online")}
+  let data=null; try{data=await r.json()}catch(e){}
+  if(r.ok) return data;
+  const h=n=>r.headers.get(n), msg=data&&typeof data.message==="string"?data.message:"";
+  if(r.status===401) throw new SyncError("auth","Token rejected");
+  if(r.status===404) throw new SyncError("notfound","Sync gist not found");
+  if(r.status===429||(r.status===403&&(h("x-ratelimit-remaining")==="0"||h("retry-after")||/rate limit/i.test(msg)))){
+    const ra=+h("retry-after"), reset=+h("x-ratelimit-reset");
+    const until=ra>0?Date.now()+ra*1000:reset>0?reset*1000:Date.now()+60000;
+    throw new SyncError("rate","GitHub rate limit — waiting",Math.max(until,Date.now()+5000));
+  }
+  if(r.status===403) throw new SyncError("forbidden","GitHub refused access. The token needs the gist scope.");
+  throw new SyncError("http","GitHub error "+r.status);
+}
+async function findOrCreateGist(){
+  for(let page=1;page<=50;page++){
+    const list=await gh("GET","/gists?per_page=100&page="+page);
+    if(!Array.isArray(list)) break;
+    const g=list.find(g=>g&&g.files&&g.files[SYNC_FILE]);
+    if(g) return g.id;
+    if(list.length<100) break;
+  }
+  const g=await gh("POST","/gists",{public:false,description:"Sentence by Sentence sync",
+    files:{[SYNC_FILE]:{content:JSON.stringify(mergeSyncData({app:SYNC_APP,schema:SYNC_SCHEMA},null),null,1)}}});
+  if(!g||!g.id) throw new SyncError("http","GitHub didn't return the new gist");
+  return g.id;
+}
+async function readGist(id){
+  const g=await gh("GET","/gists/"+encodeURIComponent(id));
+  const f=g&&g.files&&g.files[SYNC_FILE];
+  if(!f) return {};
+  let text=f.content;
+  if(f.truncated){ // over ~1 MB the API cuts the content; the raw file has all of it
+    if(typeof f.raw_url!=="string"||!/^https:\/\/gist\.githubusercontent\.com\//.test(f.raw_url)) throw new SyncError("http","Couldn't read the full sync file");
+    let r; try{r=await fetch(f.raw_url,{cache:"no-store"})}catch(e){throw new SyncError("network","Offline — will sync when back online")}
+    if(!r.ok) throw new SyncError("http","GitHub error "+r.status);
+    text=await r.text();
+  }
+  if(typeof text!=="string"||!text.trim()) return {};
+  let doc; try{doc=JSON.parse(text)}catch(e){throw new SyncError("corrupt","The sync file isn't valid JSON, so it was left untouched")}
+  if(!isObj(doc)||(doc.app!==undefined&&doc.app!==SYNC_APP)) throw new SyncError("corrupt","The sync gist holds something else, so it was left untouched");
+  if(isNum(doc.schema)&&doc.schema>SYNC_SCHEMA) throw new SyncError("schema","The sync file is from a newer version of this page. Update this copy to keep syncing.");
+  return doc;
+}
+const syncKey=d=>canon(Object.assign({},d,{updatedAt:0}));
+// One cycle: pull, merge into local, save, push only if the merged result differs from what was pulled.
+async function runSync(){
+  if(!sync.token) return null;
+  if(syncBusy){syncAgain=true;return null}
+  if(rateUntil>Date.now()){scheduleSyncAt(rateUntil);return null}
+  syncBusy=true; renderSyncStatus();
+  let report=null;
+  try{
+    if(!sync.gistId){sync.gistId=await findOrCreateGist();persistSync()}
+    const remote=mergeSyncData(await readGist(sync.gistId),null);
+    const merged=mergeSyncData(toSyncDoc(),remote);
+    merged.devices[device.id]=device.name;
+    report=applySyncDoc(merged);
+    if(syncKey(merged)!==syncKey(remote)){
+      merged.updatedAt=Date.now();
+      await gh("PATCH","/gists/"+encodeURIComponent(sync.gistId),{files:{[SYNC_FILE]:{content:JSON.stringify(merged,null,1)}}});
+    }
+    Object.assign(sync,{lastSyncAt:Date.now(),lastError:null,pending:false});
+    lastReport=report;
+  }catch(e){
+    const err=e instanceof SyncError?e:new SyncError("http","Sync failed: "+(e&&e.message||"unknown error"));
+    sync.lastError={kind:err.kind,message:err.message,at:Date.now()};
+    if(err.kind==="network") sync.pending=true;
+    if(err.kind==="rate"){rateUntil=err.until;scheduleSyncAt(rateUntil)}
+  }finally{
+    syncBusy=false; persistSync(); renderSyncStatus();
+  }
+  if(syncAgain){syncAgain=false;return runSync()}
+  return report;
+}
+function scheduleSyncAt(t){
+  if(syncTimer&&syncDue<=t) return; // an earlier run is already due
+  clearTimeout(syncTimer); syncDue=t;
+  syncTimer=setTimeout(()=>{syncTimer=null;runSync()},Math.max(0,t-Date.now()));
+}
+// change=true marks a local edit still to be pushed. A rejected token stops automatic retries until it's replaced.
+function requestSync(delay,change){
+  if(!sync.token) return;
+  if(change&&!sync.pending){sync.pending=true;persistSync()}
+  if(sync.lastError&&sync.lastError.kind==="auth") return;
+  scheduleSyncAt(Date.now()+delay);
+}
+// After the gist was deleted: forget it and make (or find) a new one.
+function createNewGist(){sync.gistId="";sync.lastError=null;persistSync();return runSync()}
+function renderSyncStatus(){}
+window.addEventListener("online",()=>{if(sync.pending)requestSync(0)});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)requestSync(0)});
+
 /* ---------- themes ---------- */
 const SKINS=[
   {id:"",name:"Sage (auto)",a:"#e9eee9",b:"#101816"},
@@ -1102,6 +1342,8 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&run.mode=
 view=location.hash==="#history"?"history":"focus";
 renderBookList(); renderControls(); renderLog(); tick(true); applyView(false);
 setInterval(()=>tick(false),250);
+if(location.hash.includes("selftest")) window.__sbsTest={mergeSyncData};
+requestSync(0);
 })();
 </script>
 
