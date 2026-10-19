@@ -1,0 +1,13 @@
+{
+  "name": "sentence-by-sentence",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A flexible Pomodoro clock that reveals a story one sentence at a time as you focus.",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/smoke.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

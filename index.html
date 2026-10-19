@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A flexible Pomodoro clock that counts past zero and reveals a story one sentence at a time as you focus.">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<style>html{color-scheme:light dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Sentence by Sentence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Spline+Sans+Mono:wght@300;500&display=swap">
+<style>
+/* Layout: a two-leaf desk — the clock on the left leaf, the manuscript page on the right; stacks on phones. */
+:root{
+  --paper:#e9eee9; --surface:#f6f8f4; --sheet:#fffdf7; --ink:#1c2a28; --muted:#5a6a66; --line:#cdd7d1;
+  --accent:#2c6a5c; --accent-soft:#d5e6df; --brass:#a8741f; --brass-soft:#f1e3c8;
+  --danger:#a63d2e; --danger-soft:#f4dfda;
+  --f-prose:"Literata",Georgia,"Times New Roman","Songti SC","Noto Serif CJK SC","Source Han Serif SC","SimSun",serif;
+  --f-ui:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-clock:"Spline Sans Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#101816; --surface:#17211f; --sheet:#1b2523; --ink:#e2eae6; --muted:#93a39e; --line:#2b3936;
+  --accent:#72bba7; --accent-soft:#1f3631; --brass:#e2ae57; --brass-soft:#3a2e19; --danger:#e88a78; --danger-soft:#3b221e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#101816; --surface:#17211f; --sheet:#1b2523; --ink:#e2eae6; --muted:#93a39e; --line:#2b3936;
+  --accent:#72bba7; --accent-soft:#1f3631; --brass:#e2ae57; --brass-soft:#3a2e19; --danger:#e88a78; --danger-soft:#3b221e; color-scheme:dark}
+
+/* Themes: picked in the header; "Sage" (no data-skin) follows the system light/dark setting. */
+:root[data-skin="night"]{--paper:#14161f;--surface:#1c1f2b;--sheet:#20232f;--ink:#e8e3d5;--muted:#9c988a;--line:#30333f;
+  --accent:#d0ab62;--accent-soft:#3a3323;--brass:#e5826a;--brass-soft:#3f2820;--danger:#ef8a7a;--danger-soft:#3e2420;color-scheme:dark}
+:root[data-skin="parchment"]{--paper:#ece2cd;--surface:#f6eedd;--sheet:#fbf6ea;--ink:#2e2418;--muted:#6f604b;--line:#d7c7a9;
+  --accent:#7a4b26;--accent-soft:#ead8bd;--brass:#b5452a;--brass-soft:#f2d6c8;--danger:#9e2f22;--danger-soft:#f2d2cb;color-scheme:light}
+:root[data-skin="sakura"]{--paper:#f6ebee;--surface:#fcf5f7;--sheet:#fffafb;--ink:#3a2a30;--muted:#7c6870;--line:#e9d3da;
+  --accent:#b0507a;--accent-soft:#f3dae5;--brass:#b8742a;--brass-soft:#f5e4cf;--danger:#a8323f;--danger-soft:#f5d7da;color-scheme:light}
+:root[data-skin="rice"]{--paper:#efeee8;--surface:#f7f6f1;--sheet:#fdfcf8;--ink:#1e1e1c;--muted:#6b6a64;--line:#d6d4ca;
+  --accent:#b3261e;--accent-soft:#f1dcd8;--brass:#35557d;--brass-soft:#dbe3ee;--danger:#8c1d18;--danger-soft:#ecd3d0;color-scheme:light}
+:root[data-skin="ocean"]{--paper:#0f1a24;--surface:#15232f;--sheet:#192a37;--ink:#dde8ef;--muted:#8ea3b2;--line:#253949;
+  --accent:#62b6db;--accent-soft:#183447;--brass:#f2b766;--brass-soft:#3a2f1c;--danger:#f08b80;--danger-soft:#3c2423;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-prose);font-weight:600;font-size:1.65rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 em{font-weight:400;color:var(--accent)}
+.today{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.hdr-right{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.skins{display:flex;align-items:center;gap:6px}
+.skins .lbl{margin-right:2px}
+.skin{width:26px;height:26px;border-radius:50%;padding:0;cursor:pointer;border:2px solid var(--line);background:linear-gradient(135deg,var(--a) 0 50%,var(--b) 50% 100%)}
+.skin[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--accent)}
+.skin:hover{transform:scale(1.08)}
+@media (prefers-reduced-motion:reduce){.skin:hover{transform:none}}
+.skin-name{font-size:.8rem;color:var(--muted);min-width:7.5em}
+.desk{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:820px){.desk{grid-template-columns:minmax(0,1fr)}}
+
+/* Clock leaf */
+.clock{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.state{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pill{font-size:.75rem;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.pill.over{background:var(--brass-soft);color:var(--brass)}
+.pill.idle{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.ringbox{position:relative;width:min(100%,260px);aspect-ratio:1;max-width:100%;margin:0 auto}
+.ringbox svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:var(--line);stroke-width:7}
+.ring-prog{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .4s linear,stroke .3s}
+.ring-prog.over{stroke:var(--brass)}
+.ring-prog.brk{stroke:var(--muted)}
+.digits{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.time{font-family:var(--f-clock);font-weight:300;font-size:clamp(2.6rem,11vw,3.4rem);letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.time.over{color:var(--brass)}
+.timesub{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center;max-width:80%}
+.task-show{font-family:var(--f-prose);font-style:italic;text-align:center;color:var(--muted);min-height:1.5em;overflow-wrap:anywhere}
+
+.next{display:flex;flex-direction:column;gap:6px}
+.next-row{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s linear}
+
+.field{display:flex;flex-direction:column;gap:6px}
+label,.lbl{font-size:.8rem;font-weight:600;color:var(--muted)}
+input[type=text],input[type=number],select{font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{font:inherit;font-size:.85rem;font-variant-numeric:tabular-nums;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
+.chip:hover{border-color:var(--accent)}
+.num{width:84px!important;flex:0 0 auto}
+.unit{font-size:.85rem;color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:11px 18px;border-radius:9px;border:1px solid var(--accent);background:var(--accent);color:var(--sheet);cursor:pointer;flex:1 1 auto}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.quiet{background:transparent;border-color:var(--line);color:var(--muted)}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.controls{display:flex;flex-direction:column;gap:14px}
+.summary{display:flex;flex-direction:column;gap:4px;text-align:center;padding:4px 0}
+.summary .big{font-family:var(--f-clock);font-size:2.6rem;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.summary .on{font-family:var(--f-prose);font-style:italic;color:var(--muted);overflow-wrap:anywhere}
+.summary .meta{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.summary .meta b{color:var(--brass);font-weight:600}
+.earned{font-size:.9rem;color:var(--accent);font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:0;width:100%}
+
+.log{display:flex;flex-direction:column;gap:6px}
+.log ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.log li{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;padding:6px 0;border-bottom:1px dashed var(--line)}
+.log li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log li span:last-child{font-variant-numeric:tabular-nums;color:var(--muted);flex:none}
+.log .empty{font-size:.85rem;color:var(--muted)}
+
+/* Manuscript leaf */
+.book{display:flex;flex-direction:column;gap:12px;min-width:0}
+.booktools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.booktools select{flex:1 1 200px;width:auto}
+.upload{position:relative;overflow:hidden}
+.booktools .btn{flex:0 0 auto}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:var(--sheet)}
+.btn.remove{background:transparent;border-color:var(--line);color:var(--muted)}
+.btn.remove:hover{border-color:var(--danger);color:var(--danger)}
+.confirm{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;background:var(--danger-soft);border:1px solid var(--danger)}
+.confirm p{margin:0;flex:1 1 240px;min-width:0;font-size:.9rem;overflow-wrap:anywhere}
+.confirm .row{flex:0 0 auto}
+.upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:4px;box-shadow:0 1px 0 var(--line),0 12px 30px -18px rgba(0,0,0,.25);
+  padding:34px clamp(20px,5vw,52px) 30px;min-height:420px;max-height:70vh;overflow-y:auto;min-width:0;position:relative}
+.folio-wrap{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.jump{font:inherit;font-size:.78rem;font-weight:600;color:var(--accent);background:transparent;border:1px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
+.jump:hover{border-color:var(--accent)}
+.per-unit{width:auto!important;flex:0 0 auto;padding:9px 8px!important}
+.sheet-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px}
+.booktitle{font-family:var(--f-prose);font-weight:600;font-size:1.25rem;margin:0;text-wrap:balance;overflow-wrap:anywhere}
+.folio{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.prose{font-family:var(--f-prose);font-size:1.08rem;line-height:1.75;max-width:62ch}
+.prose p{margin:0 0 1em;text-indent:1.4em}
+.prose p:first-child{text-indent:0}
+.prose:lang(zh){line-height:1.9;letter-spacing:.02em}
+.prose:lang(zh) p,.prose:lang(zh) p:first-child{text-indent:2em}
+.s.latest{background:linear-gradient(transparent 62%,var(--accent-soft) 62%)}
+.s.fresh{animation:ink 1.6s ease-out}
+@keyframes ink{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:none}}
+@media (prefers-reduced-motion:reduce){.s.fresh{animation:none}.ring-prog,.bar i{transition:none}}
+.locked{display:flex;align-items:center;gap:10px;font-family:var(--f-ui);font-size:.85rem;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+.locked .blur{flex:1;height:.9em;border-radius:4px;background:repeating-linear-gradient(90deg,var(--line) 0 38px,transparent 38px 46px);opacity:.8}
+.blank{font-family:var(--f-prose);font-style:italic;color:var(--muted)}
+.note{font-size:.82rem;color:var(--muted)}
+.note.warn{color:var(--brass)}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:420px){.settings{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Sentence <em>by</em> Sentence</h1>
+    <div class="hdr-right">
+      <div class="today" id="todayTotal">Today: 0:00 focused</div>
+      <div class="skins" role="group" aria-label="Theme"><span class="lbl">Theme</span><span id="skinBtns" class="skins"></span><span class="skin-name" id="skinName"></span></div>
+    </div>
+  </header>
+
+  <div class="desk">
+    <!-- Clock leaf -->
+    <section class="clock" aria-label="Timer">
+      <div class="state">
+        <span class="eyebrow" id="modeLabel">Ready to focus</span>
+        <span class="pill idle" id="pill">Idle</span>
+      </div>
+
+      <div class="ringbox">
+        <svg viewBox="0 0 220 220" aria-hidden="true">
+          <circle class="ring-track" cx="110" cy="110" r="100"/>
+          <circle class="ring-prog" id="ring" cx="110" cy="110" r="100" stroke-dasharray="628.32" stroke-dashoffset="628.32"/>
+        </svg>
+        <div class="digits">
+          <div class="time" id="time" aria-live="off">25:00</div>
+          <div class="timesub" id="timesub">Counts down, then keeps going</div>
+        </div>
+      </div>
+      <div class="task-show" id="taskShow"></div>
+
+      <div class="next" id="nextBox">
+        <div class="next-row"><span id="nextLabel">Next sentence</span><span id="nextTime">5:00 of focus</span></div>
+        <div class="bar"><i id="nextBar"></i></div>
+      </div>
+
+      <div class="controls" id="controls"></div>
+
+      <hr>
+      <div class="log">
+        <span class="eyebrow">Today's sessions</span>
+        <ol id="logList"></ol>
+      </div>
+    </section>
+
+    <!-- Manuscript leaf -->
+    <section class="book" aria-label="Story reward">
+      <div class="booktools">
+        <select id="bookSel" aria-label="Choose a story"></select>
+        <button class="btn remove" id="removeBtn" type="button">Remove</button>
+        <span class="btn ghost upload" role="button">Add story (.epub, .html, .txt)
+          <input type="file" id="fileIn" accept=".txt,.html,.htm,.xhtml,.epub,text/plain,text/html,application/epub+zip" multiple aria-label="Add a story file: EPUB, HTML or plain text">
+        </span>
+      </div>
+      <div class="confirm" id="confirmBox" hidden role="alertdialog" aria-labelledby="confirmText">
+        <p id="confirmText"></p>
+        <div class="row"><button class="btn danger" id="confirmYes" type="button">Remove story</button><button class="btn quiet" id="confirmNo" type="button">Keep it</button></div>
+      </div>
+      <article class="sheet" id="sheet">
+        <div class="sheet-head">
+          <div style="min-width:0"><h2 class="booktitle" id="bookTitle">—</h2><div class="note" id="bookAuthor"></div></div>
+          <span class="folio-wrap"><span class="folio" id="folio"></span><button class="jump" id="jumpBtn" type="button" hidden>Jump to newest ↓</button></span>
+        </div>
+        <div class="prose" id="prose"></div>
+        <div class="locked" id="locked"><span class="blur"></span><span id="lockedText"></span></div>
+      </article>
+      <p class="note" id="bookNote">Each sentence unlocks after a set amount of focus (change it under Time per sentence). The page stays where you left off; new sentences appear below. Add EPUB, HTML or plain-text stories; AO3 tags, summaries and author's notes are skipped. Progress is kept per story in this browser.</p>
+    </section>
+  </div>
+</div>
+
+<!-- JSZip 3.10.1 (MIT or GPLv3), vendored so EPUB import works offline -->
+<script src="vendor/jszip.min.js"></script>
+<script>
+(function(){
+"use strict";
+const SAMPLE_TEXT = `The Keeper at Gannet Rock
+
+Every keeper who served at Gannet Rock left a line in the ledger before going ashore for good. Most of them wrote about the weather. One wrote only the word “finally,” underlined twice. Ida Marsh had been on the rock for eleven days when she read them all by lamplight, with the wind leaning on the door.
+
+The last entry was not in a keeper's hand. It was small and slanted, and the ink had gone brown. It said: The light is not what keeps the ships away.
+
+Ida closed the book and listened. The lamp turned overhead with its slow mechanical breath. Far below it, somewhere in the rock, something answered the turning: a low knock, then another, patient as a clock.
+
+She told herself it was the sea working at a cave. She told herself this through the night and into the grey morning, when the supply boat failed to come. By noon she had found the trapdoor beneath the coal store, its iron ring polished bright by a hand that was not hers.
+
+The stairs went down farther than the rock was tall. She counted two hundred steps before she stopped counting. At the bottom was a long room lined with shelves, and on every shelf sat a lantern, each one lit, each one burning a different color.
+
+A card was tied to the nearest with string. It held a single name, a ship she knew from the harbour lists, lost the winter before. The next card named another. Ida walked the length of the room reading names until she reached an empty hook, and a card already waiting beside it, the ink still wet.
+
+It was her own handwriting. She did not remember writing it. It said: Keep them burning until they find their way home.
+
+Above her, faintly, the knocking began again. This time, she understood, it was coming from the door.`;
+
+/* ---------- storage ---------- */
+const K_STATE="sbs-state-v1", K_RUN="sbs-run-v1", K_TEXT="sbs-text-";
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function saveRaw(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function loadRaw(k){try{return localStorage.getItem(k)}catch(e){return null}}
+
+const state = Object.assign({
+  focusMin:25, perMin:1, breakMin:5, task:"",
+  activeId:"sample",
+  books:{sample:{name:"The Keeper at Gannet Rock (sample)",revealed:0,carryMs:0,sample:true}},
+  log:[]
+}, load(K_STATE,{}));
+if(!state.perV2){state.perMin=1;state.perV2=true;save(K_STATE,state)} // move saved 5-minute setting to the new 1-minute default once
+if(state.perSec===undefined){state.perSec=Math.max(1,state.perMin||1)*60;state.perUnit="min";save(K_STATE,state)}
+if(state.perUnit!=="sec"&&state.perUnit!=="min") state.perUnit="min";
+if(!state.books.sample) state.books.sample={name:"The Keeper at Gannet Rock (sample)",revealed:0,carryMs:0,sample:true};
+let run = load(K_RUN,{mode:"idle"});
+const texts = {}; // id -> sentences [{t,np}]
+const persist=()=>save(K_STATE,state);
+const persistRun=()=>save(K_RUN,run);
+
+/* ---------- text parsing ---------- */
+function stripGutenberg(txt){
+  const s=txt.search(/\*\*\*\s*START OF (THE|THIS) PROJECT GUTENBERG[^\n]*\n/i);
+  if(s>=0){txt=txt.slice(txt.indexOf("\n",s)+1)}
+  const e=txt.search(/\*\*\*\s*END OF (THE|THIS) PROJECT GUTENBERG/i);
+  if(e>=0) txt=txt.slice(0,e);
+  return txt;
+}
+function guessTitle(txt,fallback){
+  const m=txt.slice(0,4000).match(/^Title:\s*(.+)$/m);
+  return m?m[1].trim():fallback;
+}
+const seg = (typeof Intl!=="undefined" && Intl.Segmenter) ? new Intl.Segmenter("en",{granularity:"sentence"}) : null;
+const CJK="⺀-鿿豈-﫿＀-￯　-〿";
+const cjkRe=new RegExp("["+CJK+"]","g");
+function isCJK(txt){const s=txt.slice(0,20000);const n=(s.match(cjkRe)||[]).length;return n>s.replace(/\s/g,"").length*0.3}
+function endsCJK(t){return new RegExp("["+CJK+"“”‘’]$").test(t)}
+function splitSentences(txt){
+  txt=stripGutenberg(txt.replace(/\r\n?/g,"\n"));
+  const zh=isCJK(txt);
+  let paras=txt.split(/\n\s*\n/);
+  // Chinese .txt novels usually put one paragraph per line (often indented with full-width spaces) and no blank lines.
+  if(zh){
+    const lines=txt.split("\n").filter(l=>l.trim());
+    if(paras.length<lines.length/4){
+      // If most lines are indented, an unindented line is a hard-wrapped continuation of the one before.
+      const ind=l=>/^[\s　]/.test(l);
+      const mostlyIndented=lines.filter(ind).length>lines.length*0.6;
+      paras=[];
+      for(const l of lines){ if(mostlyIndented&&!ind(l)&&paras.length) paras[paras.length-1]+="\n"+l; else paras.push(l); }
+    }
+  }
+  const joinCJK=new RegExp("(["+CJK+"])[ \\t\\u3000]*\\n\\s*(?=["+CJK+"])","g");
+  paras=paras.map(p=>(zh?p.replace(joinCJK,"$1"):p).replace(/\s+/g," ").trim()).filter(Boolean);
+  const out=[];
+  for(const p of paras){
+    let parts;
+    if(seg){parts=Array.from(seg.segment(p),x=>x.segment.trim())}
+    else{parts=(p.match(/[^.!?。！？]+[.!?。！？…]+["'”’)\]」』）]*\s*|[^.!?。！？]+$/g)||[p]).map(x=>x.trim())}
+    // Keep opening quotes and brackets with the sentence they open.
+    for(let i=0;i<parts.length-1;i++){
+      const m=parts[i].match(/[“‘「『（(《]+$/);
+      if(m){parts[i]=parts[i].slice(0,-m[0].length).trim();parts[i+1]=m[0]+parts[i+1]}
+    }
+    let first=true;
+    for(const t of parts){ if(!t) continue; out.push({t,np:first}); first=false; }
+  }
+  return out;
+}
+texts.sample=splitSentences(SAMPLE_TEXT);
+for(const id in state.books){
+  if(id==="sample") continue;
+  const raw=loadRaw(K_TEXT+id);
+  if(raw) texts[id]=splitSentences(raw);
+}
+
+/* ---------- helpers ---------- */
+const $=id=>document.getElementById(id);
+const perMs=()=>Math.max(1,state.perSec)*1000;
+function perLabel(){
+  const s=state.perSec;
+  if(s%60===0){const m=s/60;return m===1?"1 minute":m+" minutes"}
+  if(s<60) return s===1?"1 second":s+" seconds";
+  return Math.floor(s/60)+" min "+(s%60)+" sec";
+}
+function fmt(ms){
+  const neg=ms<0; ms=Math.abs(ms);
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60), sec=s%60;
+  const mm=h?String(m).padStart(2,"0"):String(m);
+  return (neg?"-":"")+(h?h+":":"")+mm+":"+String(sec).padStart(2,"0");
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function hashId(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return "b"+(h>>>0).toString(36)}
+const book=()=>state.books[state.activeId]||state.books.sample;
+const sentences=()=>texts[state.activeId]||null;
+function focusElapsed(){
+  if(run.mode!=="focus") return 0;
+  return run.accMs+(run.running?Date.now()-run.startedAt:0);
+}
+function liveRevealed(){
+  const b=book(), s=sentences(); if(!s) return b.revealed;
+  const extra=run.mode==="focus"?Math.floor((b.carryMs+focusElapsed())/perMs()):0;
+  return Math.min(s.length,b.revealed+extra);
+}
+function isToday(ts){const d=new Date(ts),n=new Date();return d.toDateString()===n.toDateString()}
+
+/* ---------- wake lock (optional) ---------- */
+let wake=null;
+async function holdWake(on){
+  try{
+    if(on&&!wake&&navigator.wakeLock){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>wake=null)}
+    if(!on&&wake){await wake.release();wake=null}
+  }catch(e){wake=null}
+}
+
+/* ---------- actions ---------- */
+function startFocus(){
+  const task=($("taskIn")&&$("taskIn").value.trim())||run.lastTask||state.task||"";
+  state.task=task; persist();
+  run={mode:"focus",task,plannedMs:state.focusMin*60000,accMs:0,startedAt:Date.now(),running:true,startEpoch:Date.now()};
+  persistRun(); holdWake(true); renderControls(); tick(true);
+}
+function togglePause(){
+  if(run.mode!=="focus") return;
+  if(run.running){run.accMs+=Date.now()-run.startedAt;run.running=false;holdWake(false)}
+  else{run.startedAt=Date.now();run.running=true;holdWake(true)}
+  persistRun(); renderControls(); tick(true);
+}
+function stopFocus(){
+  if(run.mode!=="focus") return;
+  const elapsed=focusElapsed(), b=book(), s=sentences();
+  const total=b.carryMs+elapsed, n=Math.floor(total/perMs());
+  const before=b.revealed;
+  b.revealed=s?Math.min(s.length,b.revealed+n):b.revealed+n;
+  b.carryMs=total%perMs();
+  const earned=b.revealed-before;
+  state.log.push({task:run.task,start:run.startEpoch,ms:elapsed,planned:run.plannedMs});
+  state.log=state.log.filter(e=>Date.now()-e.start<7*864e5);
+  persist();
+  run={mode:"summary",task:run.task,plannedMs:run.plannedMs,elapsedMs:elapsed,earned,lastTask:run.task};
+  persistRun(); holdWake(false); renderControls(); renderLog(); tick(true);
+}
+function startBreak(min){
+  min=Math.max(1,Math.round(min||5));
+  run={mode:"break",plannedMs:min*60000,startedAt:Date.now(),lastTask:run.lastTask||run.task||""};
+  persistRun(); renderControls(); tick(true);
+}
+function toIdle(){
+  run={mode:"idle",lastTask:run.lastTask||run.task||""}; persistRun(); holdWake(false); renderControls(); tick(true);
+}
+
+/* ---------- controls per mode ---------- */
+function renderControls(){
+  const c=$("controls"), m=run.mode;
+  $("bookSel").disabled=(m==="focus");
+  updateRemoveBtn();
+  $("fileIn").disabled=(m==="focus");
+  if(m==="idle"){
+    const presets=[15,25,45,60];
+    c.innerHTML=`
+      <div class="field"><label for="taskIn">What are you working on? <span style="font-weight:400">(optional)</span></label>
+        <input type="text" id="taskIn" maxlength="80" placeholder="e.g. Draft chapter 3 outline" value="${esc(state.task||"")}"></div>
+      <div class="field"><span class="lbl">Planned focus</span>
+        <div class="row">${presets.map(p=>`<button class="chip" data-p="${p}" aria-pressed="${p===state.focusMin}">${p}</button>`).join("")}
+          <input type="number" class="num" id="focusIn" min="1" max="480" value="${state.focusMin}" aria-label="Focus minutes"><span class="unit">min</span></div></div>
+      <div class="settings">
+        <div class="field"><label for="perIn">Time per sentence</label>
+          <div class="row"><input type="number" class="num" id="perIn" min="1" max="${state.perUnit==="min"?120:3600}" value="${state.perUnit==="min"?state.perSec/60:state.perSec}">
+            <select id="perUnit" class="per-unit" aria-label="Unit"><option value="sec"${state.perUnit==="sec"?" selected":""}>sec</option><option value="min"${state.perUnit==="min"?" selected":""}>min</option></select></div></div>
+        <div class="field"><label for="brkIn">Default break</label>
+          <div class="row"><input type="number" class="num" id="brkIn" min="1" max="120" value="${state.breakMin}"><span class="unit">min</span></div></div>
+      </div>
+      <button class="btn" id="go">Start focus</button>`;
+    c.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.focusMin=+b.dataset.p;persist();$("focusIn").value=state.focusMin;c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===b));tick(true)});
+    $("focusIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=480){state.focusMin=v;persist();c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.p===v));tick(true)}};
+    const setPer=()=>{
+      const u=$("perUnit").value, v=+$("perIn").value;
+      const sec=Math.round(u==="min"?v*60:v);
+      if(v>0&&sec>=1&&sec<=7200){state.perSec=sec;state.perUnit=u;persist();renderBook(false);tick(true)}
+    };
+    $("perIn").oninput=setPer;
+    $("perUnit").onchange=()=>{
+      const u=$("perUnit").value, inp=$("perIn");
+      // keep the same duration when switching units where it converts cleanly
+      inp.value=u==="min"?Math.max(1,Math.round(state.perSec/60)):state.perSec;
+      inp.max=u==="min"?120:3600;
+      setPer();
+    };
+    $("brkIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=120){state.breakMin=v;persist()}};
+    $("taskIn").oninput=e=>{state.task=e.target.value;persist()};
+    $("taskIn").onkeydown=e=>{if(e.key==="Enter")startFocus()};
+    $("go").onclick=startFocus;
+  }else if(m==="focus"){
+    c.innerHTML=`<div class="row">
+      <button class="btn" id="stop">Stop &amp; see time</button>
+      <button class="btn ghost" id="pause">${run.running?"Pause":"Resume"}</button></div>`;
+    $("stop").onclick=stopFocus; $("pause").onclick=togglePause;
+  }else if(m==="summary"){
+    const diff=run.elapsedMs-run.plannedMs;
+    const diffTxt=diff>=0?`<b>+${fmt(diff)}</b> past plan`:`${fmt(-diff)} short of plan`;
+    const others=[10,15,20].filter(x=>x!==state.breakMin);
+    c.innerHTML=`<div class="summary">
+        <span class="eyebrow">Time on task</span>
+        <span class="big">${fmt(run.elapsedMs)}</span>
+        ${run.task?`<span class="on">${esc(run.task)}</span>`:""}
+        <span class="meta">Planned ${fmt(run.plannedMs)} · ${diffTxt}</span>
+        <span class="earned">${run.earned===1?"1 new sentence revealed":run.earned+" new sentences revealed"}</span>
+      </div>
+      <button class="btn" id="brkDefault">Take a ${state.breakMin}-minute break</button>
+      <div class="field"><span class="lbl">Or a longer break</span>
+        <div class="row">${others.map(x=>`<button class="chip" data-b="${x}">${x} min</button>`).join("")}
+          <input type="number" class="num" id="brkCustom" min="1" max="240" placeholder="min" aria-label="Custom break minutes">
+          <button class="chip" id="brkGo">Start</button></div></div>
+      <div class="row"><button class="btn ghost" id="again">Focus again</button><button class="btn quiet" id="done">Stop the clock</button></div>`;
+    $("brkDefault").onclick=()=>startBreak(state.breakMin);
+    c.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>startBreak(+b.dataset.b));
+    $("brkGo").onclick=()=>{const v=+$("brkCustom").value;if(v>=1)startBreak(v);else $("brkCustom").focus()};
+    $("brkCustom").onkeydown=e=>{if(e.key==="Enter")$("brkGo").click()};
+    $("again").onclick=startFocus; $("done").onclick=toIdle;
+  }else if(m==="break"){
+    c.innerHTML=`<div class="row">
+      <button class="btn" id="back">Back to focus</button>
+      <button class="btn quiet" id="end">Stop the clock</button></div>`;
+    $("back").onclick=startFocus; $("end").onclick=toIdle;
+  }
+}
+
+/* ---------- live display ---------- */
+const C=628.32;
+let lastShown=-1;
+function tick(force){
+  const m=run.mode, ring=$("ring"), t=$("time");
+  let label, pill, pillCls="", sub, timeTxt, frac=0, over=false, ringCls="";
+  if(m==="focus"){
+    const el=focusElapsed(), rem=run.plannedMs-el;
+    over=rem<0;
+    timeTxt=over?"+"+fmt(-rem):fmt(rem);
+    frac=over?1:el/run.plannedMs;
+    label=!run.running?"Paused":over?"Past your plan, still going":"Focusing";
+    pill=!run.running?"Paused":over?"Overtime":"Focus"; pillCls=over?"over":"";
+    ringCls=over?"over":"";
+    sub=`${fmt(el)} on task · plan ${fmt(run.plannedMs)}`;
+    $("taskShow").textContent=run.task||"";
+  }else if(m==="break"){
+    const el=Date.now()-run.startedAt, rem=run.plannedMs-el;
+    over=rem<0;
+    timeTxt=over?"+"+fmt(-rem):fmt(rem);
+    frac=over?1:el/run.plannedMs; ringCls=over?"over":"brk";
+    label=over?"Break ran over":"On break"; pill="Break"; pillCls=over?"over":"idle";
+    sub=over?`Break was ${fmt(run.plannedMs)}`:`${fmt(run.plannedMs)} break`;
+    $("taskShow").textContent=run.lastTask?"Up next: "+run.lastTask:"";
+  }else if(m==="summary"){
+    timeTxt=fmt(run.elapsedMs); frac=Math.min(1,run.elapsedMs/run.plannedMs); ringCls=run.elapsedMs>run.plannedMs?"over":"";
+    label="Session done"; pill="Stopped"; pillCls="idle"; sub="Clock stopped";
+    $("taskShow").textContent="";
+  }else{
+    timeTxt=fmt(state.focusMin*60000); label="Ready to focus"; pill="Idle"; pillCls="idle";
+    sub="Counts down, then keeps going";
+    $("taskShow").textContent="";
+  }
+  t.textContent=timeTxt; t.classList.toggle("over",over&&m!=="break");
+  $("timesub").textContent=sub; $("modeLabel").textContent=label;
+  const p=$("pill"); p.textContent=pill; p.className="pill "+pillCls;
+  ring.setAttribute("class","ring-prog "+ringCls);
+  ring.style.strokeDashoffset=String(C*(1-Math.max(0,Math.min(1,frac))));
+
+  // next sentence progress
+  const b=book(), s=sentences();
+  const into=(b.carryMs+(m==="focus"?focusElapsed():0))%perMs();
+  const done=s&&liveRevealed()>=s.length;
+  $("nextBar").style.width=done?"100%":(into/perMs()*100)+"%";
+  $("nextLabel").textContent=done?"Story finished":"Next sentence";
+  $("nextTime").textContent=done?"Add another story":`${fmt(perMs()-into)} of focus to go`;
+  $("lockedText").textContent=done?"The end.":`Unlocks after ${fmt(perMs()-into)} more focus`;
+
+  const shown=liveRevealed();
+  if(force||shown!==lastShown){ renderBook(shown>lastShown&&lastShown>=0&&!force); }
+}
+
+/* ---------- book rendering ---------- */
+function renderBook(fresh){
+  const b=book(), s=sentences(), n=liveRevealed();
+  $("bookTitle").textContent=b.name;
+  $("bookAuthor").textContent=b.author?"by "+b.author:"";
+  const prose=$("prose"), sheet=$("sheet");
+  if(!s){
+    prose.innerHTML=`<p class="blank">This story's text isn't saved in this browser. Add “${esc(b.fileName||b.name)}” again with the button above; your place (sentence ${b.revealed}) is kept.</p>`;
+    $("folio").textContent=`sentence ${b.revealed}`; $("locked").hidden=true; lastShown=n; return;
+  }
+  $("locked").hidden=false;
+  if(b.zh===undefined) b.zh=isCJK(s.slice(0,200).map(x=>x.t).join(""));
+  prose.lang=b.zh?"zh":"en";
+  $("folio").textContent=`${n.toLocaleString()} of ${s.length.toLocaleString()} sentences · ${s.length?Math.floor(n/s.length*100):0}%`;
+  if(n===0){
+    prose.innerHTML=`<p class="blank">The page is blank for now. Your first sentence appears after ${perLabel()} of focus.</p>`;
+  }else{
+    let html="", open=false;
+    for(let i=0;i<n;i++){
+      const x=s[i];
+      if(x.np||!open){ if(open) html+="</p>"; html+="<p>"; open=true; }
+      const cls=i===n-1?"s latest"+(fresh?" fresh":""):"s";
+      html+=`<span class="${cls}">${esc(x.t)}</span>`+(endsCJK(x.t)?"":" ");
+    }
+    html+="</p>"; prose.innerHTML=html;
+  }
+  $("jumpBtn").hidden=n===0;
+  // Only move the page when a story is first opened; new sentences never scroll it.
+  if(lastShown<0) restoreReadPos();
+  lastShown=n;
+}
+
+/* ---------- reading position ---------- */
+// Saved as the index of the first sentence at the top of the page, so it survives reloads and window resizes.
+function topSentence(){
+  const spans=$("prose").querySelectorAll(".s"); if(!spans.length) return null;
+  const top=$("sheet").scrollTop;
+  let lo=0,hi=spans.length-1;
+  while(lo<hi){const mid=(lo+hi)>>1; if(spans[mid].offsetTop<top) lo=mid+1; else hi=mid;}
+  return lo;
+}
+function restoreReadPos(){
+  const b=book(), sheet=$("sheet"), spans=$("prose").querySelectorAll(".s");
+  if(!spans.length){sheet.scrollTop=0;return}
+  if(b.readAt===undefined){sheet.scrollTop=sheet.scrollHeight;return} // stories from before this update open at the newest sentence once
+  const el=spans[Math.min(b.readAt,spans.length-1)];
+  sheet.scrollTop=b.readAt===0?0:Math.max(0,el.offsetTop-16);
+}
+let readT;
+$("sheet").addEventListener("scroll",()=>{
+  clearTimeout(readT);
+  readT=setTimeout(()=>{const i=topSentence(); if(i!==null){const b=book(); if(b.readAt!==i){b.readAt=$("sheet").scrollTop<4?0:i;persist()}}},250);
+},{passive:true});
+$("jumpBtn").onclick=()=>{
+  const sheet=$("sheet"), latest=$("prose").querySelector(".s.latest");
+  const top=latest?Math.max(0,latest.offsetTop-sheet.clientHeight/3):sheet.scrollHeight;
+  const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  sheet.scrollTo({top,behavior:reduce?"auto":"smooth"});
+};
+function renderBookList(){
+  const sel=$("bookSel");
+  sel.innerHTML=Object.entries(state.books).map(([id,b])=>`<option value="${id}"${id===state.activeId?" selected":""}>${esc(b.name)}${texts[id]?"":" (re-add file)"}</option>`).join("");
+  updateRemoveBtn();
+}
+$("bookSel").onchange=e=>{state.activeId=e.target.value;persist();$("confirmBox").hidden=true;updateRemoveBtn();lastShown=-1;tick(true)};
+
+/* ---------- removing a story ---------- */
+function updateRemoveBtn(){
+  const btn=$("removeBtn");
+  btn.hidden=state.activeId==="sample";
+  btn.disabled=run.mode==="focus";
+  btn.title=run.mode==="focus"?"Stop the focus session to remove a story":"Remove this story from your shelf";
+  if(run.mode==="focus") $("confirmBox").hidden=true;
+}
+$("removeBtn").onclick=()=>{
+  const b=book(), s=sentences();
+  const place=s?`You're at sentence ${liveRevealed().toLocaleString()} of ${s.length.toLocaleString()}.`:`You're at sentence ${b.revealed.toLocaleString()}.`;
+  $("confirmText").textContent=`Remove “${b.name}”? ${place} Its text and your place will be deleted from this browser. Today's session log is kept.`;
+  $("confirmBox").hidden=false;
+  $("confirmNo").focus();
+};
+$("confirmNo").onclick=()=>{$("confirmBox").hidden=true;$("removeBtn").focus()};
+$("confirmYes").onclick=()=>{
+  const id=state.activeId;
+  if(id==="sample"||run.mode==="focus"||!state.books[id]) return;
+  const name=state.books[id].name;
+  delete state.books[id]; delete texts[id];
+  try{localStorage.removeItem(K_TEXT+id)}catch(e){}
+  state.activeId=Object.keys(state.books).find(x=>x!=="sample")||"sample";
+  persist();
+  $("confirmBox").hidden=true;
+  const note=$("bookNote"); note.textContent=`Removed “${name}”.`; note.className="note";
+  renderBookList(); lastShown=-1; tick(true);
+};
+
+/* ---------- EPUB / HTML extraction ---------- */
+const BLOCK="p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,div,section,article,dd,dt,td";
+function blockText(root){
+  root.querySelectorAll("script,style,noscript").forEach(n=>n.remove());
+  root.querySelectorAll("br").forEach(n=>n.replaceWith("\n\n"));
+  const blocks=[...root.querySelectorAll(BLOCK)].filter(el=>!el.querySelector(BLOCK));
+  if(!blocks.length) return root.textContent||"";
+  return blocks.map(el=>(el.textContent||"").trim()).filter(Boolean).join("\n\n");
+}
+// AO3 wraps the story in #chapters and puts tags, summaries and notes in #preface, #afterword and .meta blocks.
+function storyRoot(doc){
+  const body=doc.body||doc.documentElement;
+  body.querySelectorAll("#preface,#afterword,.endnotes,[id^='endnotes']").forEach(n=>n.remove());
+  const root=doc.querySelector("#chapters")||body;
+  root.querySelectorAll(".meta").forEach(m=>{
+    const box=doc.createElement("div");
+    m.querySelectorAll("h1,h2,h3").forEach(h=>{const t=h.textContent.trim();if(t){const p=doc.createElement("h2");p.textContent=t;box.appendChild(p)}});
+    m.replaceWith(box);
+  });
+  return root;
+}
+function parseHtml(str,fileName){
+  const doc=new DOMParser().parseFromString(str,"text/html");
+  const h=doc.querySelector("#preface h1, .meta h1");
+  const title=(h&&h.textContent.trim())||(doc.title||"").split(" - ")[0].trim()||fileName.replace(/\.x?html?$/i,"");
+  const a=doc.querySelector("a[rel='author']");
+  return {title,author:a?a.textContent.trim():"",text:blockText(storyRoot(doc))};
+}
+function joinPath(base,href){
+  const out=[];
+  (base+decodeURIComponent(href.split("#")[0])).split("/").forEach(p=>{if(p==="..")out.pop();else if(p&&p!==".")out.push(p)});
+  return out.join("/");
+}
+async function parseEpub(buf,fileName){
+  if(typeof JSZip==="undefined") throw new Error("The EPUB reader didn't load. Check your connection, reload the page, and add the file again.");
+  const zip=await JSZip.loadAsync(buf);
+  const xml=s=>new DOMParser().parseFromString(s,"application/xml");
+  const byTag=(d,t)=>d.getElementsByTagNameNS("*",t);
+  const cont=zip.file("META-INF/container.xml");
+  if(!cont) throw new Error("This EPUB is missing its container file, so it can't be read.");
+  const rf=byTag(xml(await cont.async("string")),"rootfile")[0];
+  const opfPath=rf&&rf.getAttribute("full-path");
+  const opfFile=opfPath&&zip.file(opfPath);
+  if(!opfFile) throw new Error("This EPUB's chapter list couldn't be found.");
+  const opf=xml(await opfFile.async("string"));
+  const base=opfPath.includes("/")?opfPath.slice(0,opfPath.lastIndexOf("/")+1):"";
+  const man={};
+  [...byTag(opf,"item")].forEach(it=>man[it.getAttribute("id")]={href:it.getAttribute("href")||"",props:it.getAttribute("properties")||""});
+  const skip=/(^|\/)(cover|toc|nav|titlepage|preface|afterword)[^\/]*$/i;
+  const parts=[];
+  for(const ref of byTag(opf,"itemref")){
+    const it=man[ref.getAttribute("idref")];
+    if(!it||/nav/.test(it.props)||skip.test(it.href)) continue;
+    const f=zip.file(joinPath(base,it.href)); if(!f) continue;
+    const src=await f.async("string");
+    let doc=new DOMParser().parseFromString(src,"application/xhtml+xml");
+    if(doc.getElementsByTagName("parsererror").length||!doc.body) doc=new DOMParser().parseFromString(src,"text/html");
+    const t=blockText(storyRoot(doc)).trim();
+    if(t) parts.push(t);
+  }
+  const tEl=byTag(opf,"title")[0], aEl=byTag(opf,"creator")[0];
+  return {title:(tEl&&tEl.textContent.trim())||fileName.replace(/\.epub$/i,""),author:aEl?aEl.textContent.trim():"",text:parts.join("\n\n")};
+}
+// Many Chinese .txt files are saved as GB18030/GBK or Big5 rather than UTF-8.
+async function decodeText(f){
+  const buf=await f.arrayBuffer();
+  const tryDec=(enc)=>{try{return new TextDecoder(enc,{fatal:true}).decode(buf)}catch(e){return null}};
+  const utf=tryDec("utf-8"); if(utf!==null) return utf.replace(/^﻿/,"");
+  const big5=tryDec("big5"), gb=tryDec("gb18030");
+  if(big5&&gb){ // both decode: prefer the one with more common CJK characters
+    const score=s=>(s.match(/[的一是不了人我在有他這個中大來上個們到說这个们说来]/g)||[]).length;
+    return score(big5)>score(gb)?big5:gb;
+  }
+  return gb||big5||new TextDecoder("utf-8").decode(buf);
+}
+async function readStory(f){
+  const ext=(f.name.match(/\.([a-z0-9]+)$/i)||[,""])[1].toLowerCase();
+  if(ext==="epub") return parseEpub(await f.arrayBuffer(),f.name);
+  const str=await decodeText(f);
+  if(/^x?html?$/.test(ext)||/^\s*(<!doctype html|<html)/i.test(str)) return parseHtml(str,f.name);
+  return {title:guessTitle(str,f.name.replace(/\.txt$/i,"")),author:"",text:str};
+}
+
+$("fileIn").onchange=e=>{
+  const files=[...e.target.files]; e.target.value="";
+  let warned=false;
+  files.forEach(f=>{
+    readStory(f).then(story=>{
+      const raw=story.text, id=hashId(f.name+"|"+f.size);
+      const parsed=splitSentences(raw);
+      if(!parsed.length){$("bookNote").textContent=`“${f.name}” has no readable story text.`;$("bookNote").className="note warn";return}
+      texts[id]=parsed;
+      if(!state.books[id]) state.books[id]={name:story.title,author:story.author,fileName:f.name,revealed:0,carryMs:0,readAt:0};
+      state.activeId=id; persist();
+      const ok=saveRaw(K_TEXT+id,raw);
+      const note=$("bookNote");
+      if(!ok&&!warned){warned=true;note.textContent=`“${f.name}” is too large to keep in this browser. It works now; after a reload, add it again and your place is restored.`;note.className="note warn"}
+      else if(!warned){note.textContent=`Added “${state.books[id].name}”: ${parsed.length.toLocaleString()} sentences.`;note.className="note"}
+      renderBookList(); lastShown=-1; tick(true);
+    }).catch(err=>{
+      const note=$("bookNote");
+      note.textContent=`Couldn't read “${f.name}”. ${err&&err.message?err.message:"The file may be damaged or in an unsupported format."}`;
+      note.className="note warn";
+    });
+  });
+};
+
+/* ---------- log ---------- */
+function renderLog(){
+  const today=state.log.filter(e=>isToday(e.start));
+  const total=today.reduce((a,e)=>a+e.ms,0);
+  $("todayTotal").textContent=`Today: ${fmt(total)} focused · ${today.length} session${today.length===1?"":"s"}`;
+  $("logList").innerHTML=today.length?today.slice().reverse().map(e=>{
+    const t=new Date(e.start).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+    return `<li><span>${t} · ${esc(e.task||"Untitled focus")}</span><span>${fmt(e.ms)}</span></li>`}).join("")
+    :`<li class="empty">No sessions yet today.</li>`;
+}
+
+/* ---------- themes ---------- */
+const SKINS=[
+  {id:"",name:"Sage (auto)",a:"#e9eee9",b:"#101816"},
+  {id:"parchment",name:"Parchment",a:"#fbf6ea",b:"#7a4b26"},
+  {id:"sakura",name:"Sakura",a:"#fffafb",b:"#b0507a"},
+  {id:"rice",name:"Rice Paper",a:"#fdfcf8",b:"#b3261e"},
+  {id:"night",name:"Night Library",a:"#20232f",b:"#d0ab62"},
+  {id:"ocean",name:"Ocean Dusk",a:"#192a37",b:"#62b6db"}
+];
+function applySkin(){
+  const cur=SKINS.find(s=>s.id===(state.skin||""))||SKINS[0];
+  if(cur.id) document.documentElement.setAttribute("data-skin",cur.id); else document.documentElement.removeAttribute("data-skin");
+  $("skinName").textContent=cur.name;
+  document.querySelectorAll(".skin").forEach(b=>b.setAttribute("aria-pressed",b.dataset.skin===cur.id));
+}
+$("skinBtns").innerHTML=SKINS.map(s=>`<button class="skin" type="button" data-skin="${s.id}" style="--a:${s.a};--b:${s.b}" title="${s.name}" aria-label="${s.name} theme"></button>`).join("");
+document.querySelectorAll(".skin").forEach(b=>b.onclick=()=>{state.skin=b.dataset.skin;persist();applySkin()});
+applySkin();
+
+/* ---------- boot ---------- */
+if(!["idle","focus","summary","break"].includes(run.mode)) run={mode:"idle"};
+if(run.mode==="focus"&&run.running) holdWake(true);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&run.mode==="focus"&&run.running)holdWake(true)});
+renderBookList(); renderControls(); renderLog(); tick(true);
+setInterval(()=>tick(false),250);
+})();
+</script>
+
+</body>
+</html>
