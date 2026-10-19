@@ -247,7 +247,7 @@ It was her own handwriting. She did not remember writing it. It said: Keep them 
 Above her, faintly, the knocking began again. This time, she understood, it was coming from the door.`;
 
 /* ---------- storage ---------- */
-const K_STATE="sbs-state-v1", K_RUN="sbs-run-v1", K_TEXT="sbs-text-";
+const K_STATE="sbs-state-v1", K_RUN="sbs-run-v1", K_TEXT="sbs-text-", K_DEVICE="sbs-device-v1";
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 function saveRaw(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
@@ -263,6 +263,21 @@ if(!state.perV2){state.perMin=1;state.perV2=true;save(K_STATE,state)} // move sa
 if(state.perSec===undefined){state.perSec=Math.max(1,state.perMin||1)*60;state.perUnit="min";save(K_STATE,state)}
 if(state.perUnit!=="sec"&&state.perUnit!=="min") state.perUnit="min";
 if(!state.books.sample) state.books.sample={name:"The Keeper at Gannet Rock (sample)",revealed:0,carryMs:0,sample:true};
+// Log entries need stable ids for sync; the id is deterministic so two devices migrating the same entry agree.
+if(state.log.some(e=>!e.id)){state.log.forEach(e=>{if(!e.id){e.id="legacy_"+e.start+"_"+e.ms;e.updatedAt=e.start}});save(K_STATE,state)}
+if(!state.devices){state.devices={};save(K_STATE,state)}
+const rnd=n=>{let s="";while(s.length<n)s+=Math.random().toString(36).slice(2);return s.slice(0,n)};
+function uaName(){
+  const ua=navigator.userAgent||"";
+  const os=/Windows/.test(ua)?"Windows":/iPhone|iPad|iPod/.test(ua)?"iOS":/Android/.test(ua)?"Android":/CrOS/.test(ua)?"ChromeOS":/Mac OS X|Macintosh/.test(ua)?"Mac":/Linux/.test(ua)?"Linux":"Device";
+  const br=/Edg\//.test(ua)?"Edge":/OPR\/|Opera/.test(ua)?"Opera":/Firefox\/|FxiOS/.test(ua)?"Firefox":/Chrome\/|CriOS/.test(ua)?"Chrome":/Safari\//.test(ua)?"Safari":"Browser";
+  return os+" · "+br;
+}
+// Per-device identity; deliberately kept out of sbs-state-v1, which is synced.
+const device=load(K_DEVICE,null)||{id:"d_"+rnd(10),name:uaName()};
+save(K_DEVICE,device);
+if(state.devices[device.id]!==device.name){state.devices[device.id]=device.name;save(K_STATE,state)}
+const newLogId=()=>"s_"+Date.now().toString(36)+"_"+rnd(6);
 let run = load(K_RUN,{mode:"idle"});
 const texts = {}; // id -> sentences [{t,np}]
 const persist=()=>save(K_STATE,state);
@@ -384,8 +399,9 @@ function stopFocus(){
   b.revealed=s?Math.min(s.length,b.revealed+n):b.revealed+n;
   b.carryMs=total%perMs();
   const earned=b.revealed-before;
-  state.log.push({task:run.task,start:run.startEpoch,ms:elapsed,planned:run.plannedMs});
-  state.log=state.log.filter(e=>Date.now()-e.start<7*864e5);
+  const now=Date.now();
+  state.log.push({id:newLogId(),start:run.startEpoch,end:now,ms:elapsed,planned:run.plannedMs,task:run.task,
+    earned,bookId:state.activeId,bookName:b.name,device:device.id,updatedAt:now});
   persist();
   run={mode:"summary",task:run.task,plannedMs:run.plannedMs,elapsedMs:elapsed,earned,lastTask:run.task};
   persistRun(); holdWake(false); renderControls(); renderLog(); tick(true);
