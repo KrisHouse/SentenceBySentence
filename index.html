@@ -216,6 +216,31 @@ input[type=search]{font:inherit;color:var(--ink);background:var(--sheet);border:
   .s-side{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;text-align:left}
 }
 .hempty{font-size:.9rem;color:var(--muted);margin:0}
+
+/* Sync */
+.hchip.sync-ok{color:var(--accent)}
+.hchip.sync-busy{color:var(--ink)}
+.hchip.sync-warn{color:var(--brass);border-color:var(--brass)}
+.hchip.sync-err{color:var(--danger);border-color:var(--danger)}
+#syncBody{display:flex;flex-direction:column;gap:12px}
+.sync-panel:focus{outline:none}
+.sync-panel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sync-panel ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.sync-panel p{margin:0;font-size:.9rem}
+.sync-panel a{color:var(--accent);font-weight:600}
+.sync-panel .note{font-size:.82rem}
+.sync-panel .btn{flex:0 0 auto}
+.tokrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tokrow input{flex:1 1 220px}
+input[type=password]{font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0;font-family:var(--f-clock);font-size:.85rem}
+.sync-msg{font-size:.88rem;padding:10px 12px;border-radius:9px;background:var(--accent-soft);color:var(--ink);display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;overflow-wrap:anywhere}
+.sync-msg.warn{background:var(--brass-soft)}
+.sync-msg.err{background:var(--danger-soft)}
+.sync-msg:empty{display:none}
+.sync-facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:.9rem;align-items:center}
+.sync-facts dt{color:var(--muted);font-size:.82rem;font-weight:600}
+.sync-facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.sync-facts input{max-width:280px}
 .hempty a{color:var(--accent);font-weight:600}
 </style>
 </head>
@@ -228,6 +253,7 @@ input[type=search]{font:inherit;color:var(--ink);background:var(--sheet);border:
     </div>
     <div class="hdr-right">
       <a class="hchip live" id="liveChip" href="#focus" hidden title="Back to the timer"></a>
+      <a class="hchip" id="syncChip" href="#history" title="Sync settings">Sync off</a>
       <div class="today" id="todayTotal">Today: 0:00 focused</div>
       <div class="skins" role="group" aria-label="Theme"><span class="lbl">Theme</span><span id="skinBtns" class="skins"></span><span class="skin-name" id="skinName"></span></div>
     </div>
@@ -313,6 +339,11 @@ input[type=search]{font:inherit;color:var(--ink);background:var(--sheet);border:
       <div class="hcontrols"><span class="eyebrow">Sessions</span><button class="btn quiet" id="csvBtn" type="button" style="flex:0 0 auto;padding:7px 14px">Export CSV</button></div>
       <div id="hList"></div>
       <button class="btn quiet" id="hMore" type="button" hidden>Show more</button>
+    </section>
+    <section class="hcard sync-panel" id="syncPanel" tabindex="-1" aria-labelledby="syncHead">
+      <span class="eyebrow" id="syncHead">Sync across devices</span>
+      <div id="syncBody"></div>
+      <div class="sync-msg" id="syncMsg" role="status"></div>
     </section>
   </main>
 </div>
@@ -644,6 +675,7 @@ function tick(force){
   ring.style.strokeDashoffset=String(C*(1-Math.max(0,Math.min(1,frac))));
   const chip=$("liveChip"), live=view==="history"&&m==="focus";
   chip.hidden=!live; if(live) chip.textContent=(run.running?"Focusing · ":"Paused · ")+timeTxt;
+  renderSyncChip();
 
   // next sentence progress
   const b=book(), s=sentences();
@@ -705,7 +737,10 @@ function restoreReadPos(){
   if(b.readAt===undefined){sheet.scrollTop=sheet.scrollHeight;return} // stories from before this update open at the newest sentence once
   const el=spans[Math.min(b.readAt,spans.length-1)];
   sheet.scrollTop=b.readAt===0?0:Math.max(0,el.offsetTop-16);
+  openTop=sheet.scrollTop;
 }
+let openTop=null; // scrollTop right after a story was opened; still equal means the reader hasn't moved
+const justOpened=()=>openTop!==null&&$("sheet").scrollTop===openTop;
 let readT;
 $("sheet").addEventListener("scroll",()=>{
   clearTimeout(readT);
@@ -887,7 +922,7 @@ function applyView(switched){
   $("tabFocus").setAttribute("aria-current",view==="focus"?"page":"false");
   $("tabHistory").setAttribute("aria-current",view==="history"?"page":"false");
   if(view==="focus"&&switched){ if(restorePending){restorePending=false;restoreReadPos()} else $("sheet").scrollTop=savedTop; }
-  else renderHistory();
+  else{renderHistory(); renderSyncPanel()}
   tick(false);
 }
 window.addEventListener("hashchange",showView);
@@ -1025,7 +1060,8 @@ function sessionRow(e,multiDev){
   let plan="";
   if(e.planned){
     const diff=(e.ms||0)-e.planned;
-    plan=`<span class="s-plan">of ${fmt(e.planned)} · ${diff>=0?`<b>+${fmt(diff)}</b>`:`−${fmt(-diff)}`}</span>`;
+    const d=Math.round(diff/1000)*1000;
+    plan=`<span class="s-plan">of ${fmt(e.planned)} · ${d>0?`<b>+${fmt(d)}</b>`:d<0?`−${fmt(-d)}`:"on plan"}</span>`;
   }
   const sub=[e.earned===undefined?"—":(e.earned===1?"1 sentence":e.earned+" sentences"), e.bookName?esc(e.bookName):"—"];
   if(multiDev) sub.push(esc(devName(e.device)));
@@ -1179,6 +1215,7 @@ function toSyncDoc(){
 // Writes a merged doc back into local state, keeping local-only fields. Returns what changed, for the status line.
 function applySyncDoc(m){
   const res={newSessions:0,storiesChanged:0,settingsChanged:false};
+  const act=state.activeId, prevReadAt=state.books[act]?state.books[act].readAtAt||0:0;
   const had=new Set(state.log.map(e=>e.id));
   res.newSessions=m.log.filter(e=>!had.has(e.id)).length;
   state.log=m.log.map(e=>Object.assign({},e));
@@ -1208,6 +1245,8 @@ function applySyncDoc(m){
   renderBookList(); renderLog(); if(view==="history") renderHistory();
   if(res.settingsChanged&&run.mode==="idle"&&!$("controls").contains(document.activeElement)) renderControls();
   tick(true);
+  const ab=state.books[act];
+  if(state.activeId===act&&ab&&(ab.readAtAt||0)>prevReadAt&&justOpened()){ if(view==="focus") restoreReadPos(); else restorePending=true; }
   return res;
 }
 
@@ -1312,7 +1351,127 @@ function requestSync(delay,change){
 }
 // After the gist was deleted: forget it and make (or find) a new one.
 function createNewGist(){sync.gistId="";sync.lastError=null;persistSync();return runSync()}
-function renderSyncStatus(){}
+
+/* ---------- sync UI ---------- */
+let syncNote=null, panelMode=null; // syncNote: {text, cls} shown under the panel after an action
+function ago(ts){
+  const s=Math.max(0,Math.round((Date.now()-ts)/1000));
+  if(s<45) return "just now";
+  const m=Math.round(s/60); if(m<60) return m+" min ago";
+  const h=Math.round(m/60); if(h<24) return h+" h ago";
+  return new Date(ts).toLocaleDateString([],{month:"short",day:"numeric"});
+}
+function syncChipState(){
+  if(!sync.token) return ["Sync off",""];
+  if(syncBusy) return ["Syncing…","sync-busy"];
+  const e=sync.lastError;
+  if(e&&e.kind==="auth") return ["Token rejected","sync-err"];
+  if((e&&e.kind==="network")||(sync.pending&&!navigator.onLine)) return ["Offline — pending","sync-warn"];
+  if(e&&e.kind==="rate") return ["Sync paused","sync-warn"];
+  if(e) return ["Sync error","sync-err"];
+  if(sync.lastSyncAt) return ["Synced "+ago(sync.lastSyncAt),"sync-ok"];
+  return ["Sync pending","sync-busy"];
+}
+function renderSyncChip(){
+  const [t,cls]=syncChipState(), c=$("syncChip");
+  if(c.textContent!==t) c.textContent=t;
+  const k="hchip "+cls; if(c.className!==k) c.className=k;
+}
+function reportText(r){
+  if(!r) return "";
+  const parts=[];
+  if(r.newSessions) parts.push(`Merged ${r.newSessions} session${r.newSessions===1?"":"s"} from other devices`);
+  if(r.storiesChanged) parts.push(`${r.storiesChanged} ${r.storiesChanged===1?"story":"stories"} updated`);
+  if(r.settingsChanged) parts.push("timer settings updated");
+  return parts.length?parts.join(" · "):"Everything was already up to date.";
+}
+const syncMode=()=>!sync.token?"setup":sync.lastError&&sync.lastError.kind==="auth"?"auth":"connected";
+function renderSyncPanel(){
+  const mode=syncMode(), body=$("syncBody"); panelMode=mode;
+  const secretNote=`<p class="note">Your sync data is kept in a <b>secret gist</b> on your GitHub account. Secret gists are unlisted, not private: anyone who has the link can read it. It holds task names, story titles and timing, never story text or your token.</p>`;
+  if(mode!=="connected"){
+    body.innerHTML=`${mode==="auth"?`<p>GitHub rejected the saved token. It may have expired or been revoked. Paste a new one; everything on this device is kept.</p>`:`<p>Sync your session history, story progress and timer settings between browsers through your own GitHub account. Story files stay on each device; add a story's file on each device to read it there.</p>`}
+      <ol>
+        <li>On GitHub, go to Settings → Developer settings → Personal access tokens → Tokens (classic) → <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Sentence%20by%20Sentence%20sync" target="_blank" rel="noopener">Generate new token</a>. Tick <b>only</b> <code>gist</code> and pick an expiry.</li>
+        <li>Paste the token here, and do the same on each device you use.</li>
+      </ol>
+      <div class="field"><label for="tokIn">GitHub token</label>
+        <div class="tokrow"><input type="password" id="tokIn" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="ghp_…">
+          <button class="btn quiet" type="button" id="tokShow" aria-pressed="false">Show</button>
+          <button class="btn" type="button" id="tokGo">${mode==="auth"?"Use new token":"Connect"}</button>
+          ${mode==="auth"?`<button class="btn quiet" type="button" id="syncOff">Disconnect</button>`:""}</div></div>
+      <p class="note">The token is saved in this browser only. With just the <code>gist</code> scope it can read and write your gists and nothing else, and you can revoke it on GitHub at any time. Don't connect on a shared computer.</p>
+      ${secretNote}`;
+    $("tokShow").onclick=()=>{const i=$("tokIn"),show=i.type==="password";i.type=show?"text":"password";$("tokShow").textContent=show?"Hide":"Show";$("tokShow").setAttribute("aria-pressed",show)};
+    $("tokGo").onclick=connectSync;
+    $("tokIn").onkeydown=e=>{if(e.key==="Enter")connectSync()};
+  }else{
+    const gist=sync.gistId?`<a href="https://gist.github.com/${encodeURIComponent(sync.gistId)}" target="_blank" rel="noopener">gist.github.com/${esc(sync.gistId)}</a>`:"Not created yet";
+    body.innerHTML=`<dl class="sync-facts">
+        <dt><label for="devName">This device</label></dt><dd><input type="text" id="devName" maxlength="40" value="${esc(device.name)}"></dd>
+        <dt>Last sync</dt><dd id="syncLast"></dd>
+        <dt>Sync file</dt><dd>${gist}</dd>
+      </dl>
+      <div class="row"><button class="btn" type="button" id="syncNowBtn">Sync now</button><button class="btn quiet" type="button" id="syncOff">Disconnect</button></div>
+      <p class="note">Disconnecting forgets the token and gist on this device only. Your history and progress stay here, and the gist stays on GitHub.</p>
+      ${secretNote}`;
+    $("syncNowBtn").onclick=()=>{syncNote=null;runSync().then(r=>{if(r)syncNote={text:reportText(r)};renderSyncStatus()})};
+    $("devName").onchange=e=>{
+      device.name=e.target.value.trim().slice(0,40)||uaName(); e.target.value=device.name;
+      save(K_DEVICE,device); state.devices[device.id]=device.name; persist(); requestSync(2000,true);
+      if(view==="history") renderSessions(filtered(Date.now()));
+    };
+  }
+  const off=$("syncOff"); if(off) off.onclick=disconnectSync;
+  renderSyncStatus();
+}
+// Updates the chip and the panel's status lines in place, without rebuilding inputs.
+function renderSyncStatus(){
+  renderSyncChip();
+  if(syncMode()!==panelMode){ if(panelMode!==null) renderSyncPanel(); return; }
+  const last=$("syncLast");
+  if(last) last.textContent=syncBusy?"Syncing…":sync.lastSyncAt?`${ago(sync.lastSyncAt)} (${new Date(sync.lastSyncAt).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})})`:"Not yet";
+  const now=$("syncNowBtn"); if(now) now.disabled=syncBusy;
+  const go=$("tokGo"); if(go) go.disabled=syncBusy;
+  const msg=$("syncMsg"), e=sync.lastError;
+  if(syncBusy&&!e){msg.className="sync-msg";msg.textContent="Syncing…";return}
+  if(e&&sync.token){
+    msg.className="sync-msg "+(e.kind==="network"||e.kind==="rate"?"warn":"err");
+    let text=e.message;
+    if(e.kind==="rate") text=`GitHub's rate limit was reached. Sync resumes at ${new Date(rateUntil||Date.now()).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}.`;
+    if(e.kind==="notfound") text="The sync gist was deleted or can't be reached with this token.";
+    if(e.kind==="auth") text="Token rejected. Paste a new token above.";
+    msg.innerHTML=esc(text)+(e.kind==="notfound"?` <button class="btn" type="button" id="newGist">Create a new sync gist</button>`:"");
+    const ng=$("newGist"); if(ng) ng.onclick=()=>{syncNote=null;createNewGist().then(r=>{if(r)syncNote={text:"Created a new sync gist with this device's data."};renderSyncPanel()})};
+    return;
+  }
+  msg.className="sync-msg"+(syncNote&&syncNote.cls?" "+syncNote.cls:"");
+  msg.textContent=syncNote?syncNote.text:"";
+}
+function connectSync(){
+  const t=$("tokIn").value.trim();
+  if(!t){syncNote={text:"Paste a token first.",cls:"warn"};renderSyncStatus();$("tokIn").focus();return}
+  const fresh=!sync.token;
+  Object.assign(sync,{token:t,lastError:null,pending:false}); if(fresh) Object.assign(sync,{gistId:"",lastSyncAt:0});
+  rateUntil=0; persistSync(); syncNote=null;
+  renderSyncPanel();
+  runSync().then(r=>{
+    if(r) syncNote={text:(fresh?"Connected. ":"")+reportText(r)};
+    renderSyncPanel();
+  });
+}
+function disconnectSync(){
+  clearTimeout(syncTimer); syncTimer=null; rateUntil=0;
+  Object.assign(sync,{token:"",gistId:"",lastSyncAt:0,lastError:null,pending:false}); persistSync();
+  syncNote={text:"Disconnected. Everything stays on this device; the gist is still on GitHub."};
+  renderSyncPanel();
+}
+$("syncChip").onclick=e=>{
+  e.preventDefault();
+  if(location.hash!=="#history") location.hash="#history";
+  showView(); // hashchange fires later; switch now so the panel is visible to scroll to
+  requestAnimationFrame(()=>{const p=$("syncPanel");p.scrollIntoView({block:"start",behavior:"auto"});p.focus({preventScroll:true})});
+};
 window.addEventListener("online",()=>{if(sync.pending)requestSync(0)});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)requestSync(0)});
 
