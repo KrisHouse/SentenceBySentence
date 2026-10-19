@@ -932,7 +932,8 @@ const H={range:"30",q:"",groups:60,editing:null,confirming:null};
 const timeFmt=new Intl.DateTimeFormat([],{hour:"numeric",minute:"2-digit"});
 function timeRange(e){
   if(!e.end) return timeFmt.format(e.start);
-  try{if(timeFmt.formatRange) return timeFmt.formatRange(e.start,e.end)}catch(err){}
+  // formatRange adds full dates when a session crosses midnight; times alone read better in a day group.
+  try{if(timeFmt.formatRange&&dayKey(e.start)===dayKey(e.end)) return timeFmt.formatRange(e.start,e.end)}catch(err){}
   return timeFmt.format(e.start)+" – "+timeFmt.format(e.end);
 }
 function dayLabel(ts){
@@ -1022,9 +1023,9 @@ function renderTopTasks(list){
   const g=new Map();
   for(const e of list){
     const k=taskName(e).toLowerCase();
-    const v=g.get(k)||{name:taskName(e),ms:0,n:0};
-    v.ms+=e.ms||0; v.n++; g.set(k,v); // later (newer) entries set the shown spelling
-    v.name=taskName(e);
+    const v=g.get(k)||{name:taskName(e),ms:0,n:0,at:-Infinity};
+    v.ms+=e.ms||0; v.n++; g.set(k,v);
+    if(e.start>=v.at){v.at=e.start;v.name=taskName(e)} // the newest session's spelling is shown
   }
   const top=[...g.values()].sort((a,b)=>b.ms-a.ms).slice(0,8), max=top.length?top[0].ms||1:1;
   $("hTop").innerHTML=top.length?top.map(t=>`<li><span class="tt-name">${esc(t.name)}</span><span class="tt-val">${hm(t.ms)} · ${t.n}</span><span class="tt-bar"><i style="width:${(t.ms/max*100).toFixed(1)}%"></i></span></li>`).join("")

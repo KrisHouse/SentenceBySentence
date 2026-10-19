@@ -161,5 +161,147 @@ await check('sync off: no requests to GitHub at all', async () => {
   await p.context().close();
 });
 
+/* ---------- two devices sharing one gist ---------- */
+// Records a short real session through the UI (1 second per sentence).
+async function recordSession(p, task) {
+  await p.click('#tabFocus');
+  await p.selectOption('#perUnit', 'sec'); await p.fill('#perIn', '1'); await p.dispatchEvent('#perIn', 'input');
+  await p.fill('#taskIn', task);
+  await p.click('#go'); await p.waitForTimeout(1300); await p.click('#stop');
+}
+async function syncNow(p) {
+  const t = Date.now();
+  await p.click('#syncChip'); await p.click('#syncNowBtn');
+  return waitSynced(p, t);
+}
+
+await check('two devices: a session from A shows in B; a deletion on B stays deleted on A', async () => {
+  const gh = makeGitHub();
+  const A = await device(gh, { state: baseState() });
+  await waitSynced(A);
+  const B = await device(gh, { state: baseState() });
+  await waitSynced(B);
+  assert.equal(Object.keys(gh.gists).length, 1, 'both devices use the same gist');
+
+  let t = Date.now();
+  await recordSession(A, 'Chapter from A');
+  await waitSynced(A, t);
+  await syncNow(B);
+  assert.ok((await B.textContent('#hList')).includes('Chapter from A'), 'A\'s session is in B\'s History');
+  assert.ok(!(await B.textContent('#hList')).includes('Linux ·'), 'device names stay hidden while only one device appears in the log');
+
+  // Delete it on B, through the in-page confirmation.
+  const row = B.locator('.srow', { hasText: 'Chapter from A' });
+  await row.locator('[data-act=del]').click();
+  assert.match(await B.textContent('#hList .confirm p'), /stay unlocked/);
+  await B.click('[data-act=really]');
+  t = Date.now();
+  await waitSynced(B, t); // debounced 2 s
+  assert.equal(gh.doc().log.length, 0);
+  assert.ok(gh.doc().deletedLog);
+
+  // A still has it locally until it syncs, then it's gone and stays gone.
+  await syncNow(A);
+  let st = (await local(A)).state;
+  assert.equal(st.log.length, 0, 'deleted on A after sync');
+  await syncNow(A);
+  st = (await local(A)).state;
+  assert.equal(st.log.length, 0, 'not resurrected by a second sync');
+  assert.ok(!(await A.textContent('#hList')).includes('Chapter from A'));
+  assert.deepEqual([...A.errors, ...B.errors], []);
+  await A.context().close(); await B.context().close();
+});
+
+await check('two devices: story progress and reading position carry over', async () => {
+  const gh = makeGitHub();
+  const A = await device(gh, { state: baseState() });
+  await waitSynced(A);
+  const t = Date.now();
+  await recordSession(A, 'reading');
+  await waitSynced(A, t);
+  const revealedA = (await local(A)).state.books.sample.revealed;
+  assert.ok(revealedA > 0);
+  const B = await device(gh, { state: baseState() });
+  const { state } = await waitSynced(B);
+  assert.equal(state.books.sample.revealed, revealedA);
+  await B.click('#tabFocus');
+  assert.equal(await B.locator('#prose .s').count(), revealedA, 'B shows the sentences A unlocked');
+  await A.context().close(); await B.context().close();
+});
+
+/* ---------- failures ---------- */
+await check('401: shows "Token rejected", keeps data, and the timer still works', async () => {
+  const gh = makeGitHub();
+  gh.fail = () => ({ status: 401, message: 'Bad credentials' });
+  const p = await device(gh, { state: baseState({ log: [entry('keep', Date.now() - 864e5)] }), hash: '#focus' });
+  await waitSynced(p);
+  assert.equal(await p.textContent('#syncChip'), 'Token rejected');
+  await p.selectOption('#perUnit', 'sec'); await p.fill('#perIn', '1'); await p.dispatchEvent('#perIn', 'input');
+  await p.click('#go');
+  const t0 = await p.textContent('#time'); await p.waitForTimeout(1300);
+  assert.notEqual(await p.textContent('#time'), t0, 'clock is running');
+  await p.click('#stop');
+  const { state } = await local(p);
+  assert.equal(state.log.length, 2, 'old session kept, new one recorded');
+  const before = gh.requests.length; await p.waitForTimeout(500);
+  assert.equal(gh.requests.length, before, 'no retries with a rejected token');
+  await p.click('#syncChip');
+  assert.ok(await p.isVisible('#tokIn'), 'asks for a new token');
+  assert.deepEqual(p.errors, []);
+  await p.context().close();
+});
+
+await check('offline: the push is kept pending and retried on the online event', async () => {
+  const gh = makeGitHub();
+  const p = await device(gh, { state: baseState(), hash: '#focus' });
+  await waitSynced(p);
+  // Route handlers still answer while the context is offline, so also make the mock drop requests.
+  await p.context().setOffline(true);
+  gh.fail = () => 'abort';
+  const t = Date.now();
+  await recordSession(p, 'Written offline');
+  let { sync } = await waitSynced(p, t);
+  assert.equal(sync.lastError.kind, 'network'); assert.equal(sync.pending, true);
+  assert.equal(await p.textContent('#syncChip'), 'Offline — pending');
+  assert.ok(!gh.doc().log.some((e) => e.task === 'Written offline'));
+  const t2 = Date.now();
+  gh.fail = null;
+  await p.context().setOffline(false); // fires the online event
+  ({ sync } = await waitSynced(p, t2));
+  assert.equal(sync.lastError, null); assert.equal(sync.pending, false);
+  assert.ok(gh.doc().log.some((e) => e.task === 'Written offline'), 'pushed after reconnecting');
+  await p.context().close();
+});
+
+await check('deleted gist: offers to create a new one, then syncs into it', async () => {
+  const gh = makeGitHub();
+  const p = await device(gh, { state: baseState({ log: [entry('mine', Date.now() - 864e5)] }), hash: '#history' });
+  const { sync } = await waitSynced(p);
+  delete gh.gists[sync.gistId];
+  await syncNow(p);
+  assert.match(await p.textContent('#syncMsg'), /deleted/);
+  assert.equal(await p.textContent('#syncChip'), 'Sync error');
+  const t = Date.now();
+  await p.click('#newGist');
+  await waitSynced(p, t);
+  assert.equal(Object.keys(gh.gists).length, 1);
+  assert.deepEqual(gh.doc().log.map((e) => e.id), ['mine']);
+  await p.context().close();
+});
+
+await check('rate limit: waits until the reset time instead of retrying', async () => {
+  const gh = makeGitHub();
+  const reset = Math.floor(Date.now() / 1000) + 3600;
+  gh.fail = () => ({ status: 403, message: 'API rate limit exceeded', headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(reset) } });
+  const p = await device(gh, { state: baseState(), hash: '#history' });
+  const { sync } = await waitSynced(p);
+  assert.equal(sync.lastError.kind, 'rate');
+  const n = gh.requests.length;
+  await p.click('#syncNowBtn'); await p.waitForTimeout(400);
+  assert.equal(gh.requests.length, n, 'no request before the reset time');
+  assert.equal(await p.textContent('#syncChip'), 'Sync paused');
+  await p.context().close();
+});
+
 await browser.close();
 if (failures) { console.error(`${failures} sync test(s) failed`); process.exitCode = 1; } else console.log('PASS');
