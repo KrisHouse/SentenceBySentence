@@ -151,19 +151,115 @@ hr{border:0;border-top:1px solid var(--line);margin:0;width:100%}
 .note.warn{color:var(--brass)}
 .settings{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:420px){.settings{grid-template-columns:1fr}}
+
+/* Tabs and header chips */
+.hdr-left{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px}
+.tabs a{font-size:.9rem;font-weight:600;color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:8px;border:1px solid transparent}
+.tabs a:hover{color:var(--ink);border-color:var(--line)}
+.tabs a[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+.tabs a:focus-visible,.hchip:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hchip{font:inherit;font-size:.78rem;font-weight:600;font-variant-numeric:tabular-nums;padding:3px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;text-decoration:none;white-space:nowrap}
+.hchip.live{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.hchip:hover{border-color:var(--accent)}
+.more-link{font-size:.85rem;font-weight:600;color:var(--accent);text-decoration:none;align-self:flex-start}
+.more-link:hover{text-decoration:underline}
+.linkbtn{font:inherit;font-size:.8rem;font-weight:600;color:var(--accent);background:transparent;border:0;padding:2px 4px;cursor:pointer;border-radius:4px}
+.linkbtn:hover{text-decoration:underline}
+.linkbtn.del{color:var(--muted)}
+.linkbtn.del:hover{color:var(--danger)}
+
+/* History */
+.history{display:flex;flex-direction:column;gap:18px;min-width:0}
+.hcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:720px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat b{font-family:var(--f-clock);font-weight:500;font-size:1.35rem;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat span:last-child{font-size:.8rem;color:var(--muted)}
+.hcontrols{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.hcontrols input[type=search]{flex:0 1 260px}
+input[type=search]{font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:8px 11px;min-width:0;width:100%}
+.chartbox{position:relative;overflow-x:auto;overflow-y:hidden;min-width:0;-webkit-overflow-scrolling:touch}
+.chartbox svg{display:block}
+.chart .cbar{fill:var(--accent)}
+.chart .cbar.on{fill:var(--brass)}
+.chart .zero{fill:var(--line)}
+.chart .plan{stroke:var(--brass);stroke-width:2;opacity:.55}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .grid.dash{stroke-dasharray:3 4}
+.chart text{fill:var(--muted);font-family:var(--f-ui);font-size:11px;font-variant-numeric:tabular-nums}
+.chart .hit{fill:transparent;cursor:pointer}
+.tip{position:absolute;top:4px;pointer-events:none;background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:.78rem;white-space:nowrap;box-shadow:0 6px 18px -10px rgba(0,0,0,.35);font-variant-numeric:tabular-nums}
+.toptasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.toptasks li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;font-size:.88rem}
+.toptasks .tt-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toptasks .tt-val{color:var(--muted);font-variant-numeric:tabular-nums}
+.toptasks .tt-bar{grid-column:1/-1;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.toptasks .tt-bar i{display:block;height:100%;background:var(--accent)}
+.daygroup{display:flex;flex-direction:column}
+.dayhead{display:flex;justify-content:space-between;gap:10px;font-size:.8rem;font-weight:600;color:var(--muted);padding:12px 0 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.sessions{list-style:none;margin:0;padding:0}
+.srow{display:grid;grid-template-columns:9.5em minmax(0,1fr) auto;gap:2px 14px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:.88rem;align-items:start}
+.s-time{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.s-task{overflow-wrap:anywhere}
+.s-sub{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.s-side{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+.s-dur{font-variant-numeric:tabular-nums;white-space:nowrap}
+.s-plan{color:var(--muted);font-size:.8rem}
+.s-plan b{color:var(--brass);font-weight:600}
+.s-act{display:flex;gap:4px}
+.srow .confirm{grid-column:1/-1;margin-top:6px}
+.srow input[type=text]{padding:5px 8px}
+@media (max-width:640px){
+  .srow{grid-template-columns:minmax(0,1fr)}
+  .s-side{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;text-align:left}
+}
+.hempty{font-size:.9rem;color:var(--muted);margin:0}
+
+/* Sync */
+.hchip.sync-ok{color:var(--accent)}
+.hchip.sync-busy{color:var(--ink)}
+.hchip.sync-warn{color:var(--brass);border-color:var(--brass)}
+.hchip.sync-err{color:var(--danger);border-color:var(--danger)}
+#syncBody{display:flex;flex-direction:column;gap:12px}
+.sync-panel:focus{outline:none}
+.sync-panel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sync-panel ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.sync-panel p{margin:0;font-size:.9rem}
+.sync-panel a{color:var(--accent);font-weight:600}
+.sync-panel .note{font-size:.82rem}
+.sync-panel .btn{flex:0 0 auto}
+.tokrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tokrow input{flex:1 1 220px}
+input[type=password]{font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-width:0;font-family:var(--f-clock);font-size:.85rem}
+.sync-msg{font-size:.88rem;padding:10px 12px;border-radius:9px;background:var(--accent-soft);color:var(--ink);display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;overflow-wrap:anywhere}
+.sync-msg.warn{background:var(--brass-soft)}
+.sync-msg.err{background:var(--danger-soft)}
+.sync-msg:empty{display:none}
+.sync-facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:.9rem;align-items:center}
+.sync-facts dt{color:var(--muted);font-size:.82rem;font-weight:600}
+.sync-facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.sync-facts input{max-width:280px}
+.hempty a{color:var(--accent);font-weight:600}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Sentence <em>by</em> Sentence</h1>
+    <div class="hdr-left">
+      <h1>Sentence <em>by</em> Sentence</h1>
+      <nav class="tabs" aria-label="Views"><a href="#focus" id="tabFocus">Focus</a><a href="#history" id="tabHistory">History</a></nav>
+    </div>
     <div class="hdr-right">
+      <a class="hchip live" id="liveChip" href="#focus" hidden title="Back to the timer"></a>
+      <a class="hchip" id="syncChip" href="#history" title="Sync settings">Sync off</a>
       <div class="today" id="todayTotal">Today: 0:00 focused</div>
       <div class="skins" role="group" aria-label="Theme"><span class="lbl">Theme</span><span id="skinBtns" class="skins"></span><span class="skin-name" id="skinName"></span></div>
     </div>
   </header>
 
-  <div class="desk">
+  <div class="desk" id="viewFocus">
     <!-- Clock leaf -->
     <section class="clock" aria-label="Timer">
       <div class="state">
@@ -194,6 +290,7 @@ hr{border:0;border-top:1px solid var(--line);margin:0;width:100%}
       <div class="log">
         <span class="eyebrow">Today's sessions</span>
         <ol id="logList"></ol>
+        <a class="more-link" href="#history">See all history →</a>
       </div>
     </section>
 
@@ -221,6 +318,34 @@ hr{border:0;border-top:1px solid var(--line);margin:0;width:100%}
       <p class="note" id="bookNote">Each sentence unlocks after a set amount of focus (change it under Time per sentence). The page stays where you left off; new sentences appear below. Add EPUB, HTML or plain-text stories; AO3 tags, summaries and author's notes are skipped. Progress is kept per story in this browser.</p>
     </section>
   </div>
+
+  <main class="history" id="viewHistory" hidden aria-label="Session history">
+    <div class="stats" id="hStats"></div>
+    <section class="hcard" aria-label="Focus by day">
+      <div class="hcontrols">
+        <div class="row" role="group" aria-label="Range" id="hRange">
+          <button class="chip" type="button" data-r="7">7 days</button><button class="chip" type="button" data-r="30">30 days</button><button class="chip" type="button" data-r="90">90 days</button><button class="chip" type="button" data-r="all">All</button>
+        </div>
+        <input type="search" id="hSearch" placeholder="Search tasks" aria-label="Filter sessions by task name">
+      </div>
+      <p class="note" id="hRangeSum"></p>
+      <div class="chartbox" id="hChartBox"><div id="hChart"></div><div class="tip" id="hTip" hidden></div></div>
+    </section>
+    <section class="hcard" aria-label="Top tasks">
+      <span class="eyebrow">Top tasks</span>
+      <ol class="toptasks" id="hTop"></ol>
+    </section>
+    <section class="hcard" aria-label="Sessions">
+      <div class="hcontrols"><span class="eyebrow">Sessions</span><button class="btn quiet" id="csvBtn" type="button" style="flex:0 0 auto;padding:7px 14px">Export CSV</button></div>
+      <div id="hList"></div>
+      <button class="btn quiet" id="hMore" type="button" hidden>Show more</button>
+    </section>
+    <section class="hcard sync-panel" id="syncPanel" tabindex="-1" aria-labelledby="syncHead">
+      <span class="eyebrow" id="syncHead">Sync across devices</span>
+      <div id="syncBody"></div>
+      <div class="sync-msg" id="syncMsg" role="status"></div>
+    </section>
+  </main>
 </div>
 
 <!-- JSZip 3.10.1 (MIT or GPLv3), vendored so EPUB import works offline -->
@@ -247,7 +372,7 @@ It was her own handwriting. She did not remember writing it. It said: Keep them 
 Above her, faintly, the knocking began again. This time, she understood, it was coming from the door.`;
 
 /* ---------- storage ---------- */
-const K_STATE="sbs-state-v1", K_RUN="sbs-run-v1", K_TEXT="sbs-text-";
+const K_STATE="sbs-state-v1", K_RUN="sbs-run-v1", K_TEXT="sbs-text-", K_DEVICE="sbs-device-v1";
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
 function saveRaw(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
@@ -263,6 +388,30 @@ if(!state.perV2){state.perMin=1;state.perV2=true;save(K_STATE,state)} // move sa
 if(state.perSec===undefined){state.perSec=Math.max(1,state.perMin||1)*60;state.perUnit="min";save(K_STATE,state)}
 if(state.perUnit!=="sec"&&state.perUnit!=="min") state.perUnit="min";
 if(!state.books.sample) state.books.sample={name:"The Keeper at Gannet Rock (sample)",revealed:0,carryMs:0,sample:true};
+// Log entries need stable ids for sync; the id is deterministic so two devices migrating the same entry agree.
+if(state.log.some(e=>!e.id)){state.log.forEach(e=>{if(!e.id){e.id="legacy_"+e.start+"_"+e.ms;e.updatedAt=e.start}});save(K_STATE,state)}
+if(!state.devices){state.devices={};save(K_STATE,state)}
+if(!state.deletedLog){state.deletedLog={};save(K_STATE,state)} // tombstones: id -> deletion time, so sync can't bring a session back
+// Sync timestamps: books and settings remember when they last changed; removed stories leave a tombstone.
+if(!state.removedBooks){
+  state.removedBooks={};
+  for(const id in state.books){const b=state.books[id]; if(b.updatedAt===undefined)b.updatedAt=0; if(b.readAtAt===undefined)b.readAtAt=0}
+  // 1 rather than 0 for customized settings, so a new device's defaults never win over them.
+  state.settingsAt=(state.focusMin!==25||state.perSec!==60||state.perUnit!=="min"||state.breakMin!==5)?1:0;
+  save(K_STATE,state);
+}
+const rnd=n=>{let s="";while(s.length<n)s+=Math.random().toString(36).slice(2);return s.slice(0,n)};
+function uaName(){
+  const ua=navigator.userAgent||"";
+  const os=/Windows/.test(ua)?"Windows":/iPhone|iPad|iPod/.test(ua)?"iOS":/Android/.test(ua)?"Android":/CrOS/.test(ua)?"ChromeOS":/Mac OS X|Macintosh/.test(ua)?"Mac":/Linux/.test(ua)?"Linux":"Device";
+  const br=/Edg\//.test(ua)?"Edge":/OPR\/|Opera/.test(ua)?"Opera":/Firefox\/|FxiOS/.test(ua)?"Firefox":/Chrome\/|CriOS/.test(ua)?"Chrome":/Safari\//.test(ua)?"Safari":"Browser";
+  return os+" · "+br;
+}
+// Per-device identity; deliberately kept out of sbs-state-v1, which is synced.
+const device=load(K_DEVICE,null)||{id:"d_"+rnd(10),name:uaName()};
+save(K_DEVICE,device);
+if(state.devices[device.id]!==device.name){state.devices[device.id]=device.name;save(K_STATE,state)}
+const newLogId=()=>"s_"+Date.now().toString(36)+"_"+rnd(6);
 let run = load(K_RUN,{mode:"idle"});
 const texts = {}; // id -> sentences [{t,np}]
 const persist=()=>save(K_STATE,state);
@@ -353,6 +502,11 @@ function liveRevealed(){
   return Math.min(s.length,b.revealed+extra);
 }
 function isToday(ts){const d=new Date(ts),n=new Date();return d.toDateString()===n.toDateString()}
+// Local calendar days; built from y/m/d so DST changes don't shift them.
+const pad2=n=>String(n).padStart(2,"0");
+function dayKey(ts){const d=new Date(ts);return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate())}
+function dayStart(ts,off){const d=new Date(ts);return new Date(d.getFullYear(),d.getMonth(),d.getDate()+(off||0)).getTime()}
+function hm(ms){const m=Math.round(ms/60000);return m<60?m+"m":Math.floor(m/60)+"h "+pad2(m%60)+"m"}
 
 /* ---------- wake lock (optional) ---------- */
 let wake=null;
@@ -384,12 +538,18 @@ function stopFocus(){
   b.revealed=s?Math.min(s.length,b.revealed+n):b.revealed+n;
   b.carryMs=total%perMs();
   const earned=b.revealed-before;
-  state.log.push({task:run.task,start:run.startEpoch,ms:elapsed,planned:run.plannedMs});
-  state.log=state.log.filter(e=>Date.now()-e.start<7*864e5);
+  const now=Date.now();
+  b.updatedAt=now;
+  state.log.push({id:newLogId(),start:run.startEpoch,end:now,ms:elapsed,planned:run.plannedMs,task:run.task,
+    earned,bookId:state.activeId,bookName:b.name,device:device.id,updatedAt:now});
   persist();
   run={mode:"summary",task:run.task,plannedMs:run.plannedMs,elapsedMs:elapsed,earned,lastTask:run.task};
   persistRun(); holdWake(false); renderControls(); renderLog(); tick(true);
+  requestSync(0,true);
 }
+// After any edit to the log: save, then refresh the Focus list and (if open) History.
+function logChanged(){persist(); renderLog(); if(view==="history") renderHistory(); requestSync(2000,true)}
+function settingsChanged(){state.settingsAt=Date.now(); persist(); requestSync(2000,true)}
 function startBreak(min){
   min=Math.max(1,Math.round(min||5));
   run={mode:"break",plannedMs:min*60000,startedAt:Date.now(),lastTask:run.lastTask||run.task||""};
@@ -421,12 +581,12 @@ function renderControls(){
           <div class="row"><input type="number" class="num" id="brkIn" min="1" max="120" value="${state.breakMin}"><span class="unit">min</span></div></div>
       </div>
       <button class="btn" id="go">Start focus</button>`;
-    c.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.focusMin=+b.dataset.p;persist();$("focusIn").value=state.focusMin;c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===b));tick(true)});
-    $("focusIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=480){state.focusMin=v;persist();c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.p===v));tick(true)}};
+    c.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{state.focusMin=+b.dataset.p;settingsChanged();$("focusIn").value=state.focusMin;c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===b));tick(true)});
+    $("focusIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=480){state.focusMin=v;settingsChanged();c.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.p===v));tick(true)}};
     const setPer=()=>{
       const u=$("perUnit").value, v=+$("perIn").value;
       const sec=Math.round(u==="min"?v*60:v);
-      if(v>0&&sec>=1&&sec<=7200){state.perSec=sec;state.perUnit=u;persist();renderBook(false);tick(true)}
+      if(v>0&&sec>=1&&sec<=7200){state.perSec=sec;state.perUnit=u;settingsChanged();renderBook(false);tick(true)}
     };
     $("perIn").oninput=setPer;
     $("perUnit").onchange=()=>{
@@ -436,7 +596,7 @@ function renderControls(){
       inp.max=u==="min"?120:3600;
       setPer();
     };
-    $("brkIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=120){state.breakMin=v;persist()}};
+    $("brkIn").oninput=e=>{const v=Math.round(+e.target.value);if(v>=1&&v<=120){state.breakMin=v;settingsChanged()}};
     $("taskIn").oninput=e=>{state.task=e.target.value;persist()};
     $("taskIn").onkeydown=e=>{if(e.key==="Enter")startFocus()};
     $("go").onclick=startFocus;
@@ -513,6 +673,9 @@ function tick(force){
   const p=$("pill"); p.textContent=pill; p.className="pill "+pillCls;
   ring.setAttribute("class","ring-prog "+ringCls);
   ring.style.strokeDashoffset=String(C*(1-Math.max(0,Math.min(1,frac))));
+  const chip=$("liveChip"), live=view==="history"&&m==="focus";
+  chip.hidden=!live; if(live) chip.textContent=(run.running?"Focusing · ":"Paused · ")+timeTxt;
+  renderSyncChip();
 
   // next sentence progress
   const b=book(), s=sentences();
@@ -555,7 +718,7 @@ function renderBook(fresh){
   }
   $("jumpBtn").hidden=n===0;
   // Only move the page when a story is first opened; new sentences never scroll it.
-  if(lastShown<0) restoreReadPos();
+  if(lastShown<0){ if(view==="focus") restoreReadPos(); else restorePending=true; }
   lastShown=n;
 }
 
@@ -574,11 +737,15 @@ function restoreReadPos(){
   if(b.readAt===undefined){sheet.scrollTop=sheet.scrollHeight;return} // stories from before this update open at the newest sentence once
   const el=spans[Math.min(b.readAt,spans.length-1)];
   sheet.scrollTop=b.readAt===0?0:Math.max(0,el.offsetTop-16);
+  openTop=sheet.scrollTop;
 }
+let openTop=null; // scrollTop right after a story was opened; still equal means the reader hasn't moved
+const justOpened=()=>openTop!==null&&$("sheet").scrollTop===openTop;
 let readT;
 $("sheet").addEventListener("scroll",()=>{
   clearTimeout(readT);
-  readT=setTimeout(()=>{const i=topSentence(); if(i!==null){const b=book(); if(b.readAt!==i){b.readAt=$("sheet").scrollTop<4?0:i;persist()}}},250);
+  if(view!=="focus") return;
+  readT=setTimeout(()=>{if(view!=="focus")return;const i=topSentence(); if(i!==null){const b=book(); if(b.readAt!==i){b.readAt=$("sheet").scrollTop<4?0:i;b.readAtAt=Date.now();persist();requestSync(30000,true)}}},250);
 },{passive:true});
 $("jumpBtn").onclick=()=>{
   const sheet=$("sheet"), latest=$("prose").querySelector(".s.latest");
@@ -614,9 +781,10 @@ $("confirmYes").onclick=()=>{
   if(id==="sample"||run.mode==="focus"||!state.books[id]) return;
   const name=state.books[id].name;
   delete state.books[id]; delete texts[id];
+  state.removedBooks[id]=Date.now();
   try{localStorage.removeItem(K_TEXT+id)}catch(e){}
   state.activeId=Object.keys(state.books).find(x=>x!=="sample")||"sample";
-  persist();
+  persist(); requestSync(2000,true);
   $("confirmBox").hidden=true;
   const note=$("bookNote"); note.textContent=`Removed “${name}”.`; note.className="note";
   renderBookList(); lastShown=-1; tick(true);
@@ -714,8 +882,9 @@ $("fileIn").onchange=e=>{
       const parsed=splitSentences(raw);
       if(!parsed.length){$("bookNote").textContent=`“${f.name}” has no readable story text.`;$("bookNote").className="note warn";return}
       texts[id]=parsed;
-      if(!state.books[id]) state.books[id]={name:story.title,author:story.author,fileName:f.name,revealed:0,carryMs:0,readAt:0};
-      state.activeId=id; persist();
+      if(!state.books[id]) state.books[id]={name:story.title,author:story.author,fileName:f.name,revealed:0,carryMs:0,readAt:0,updatedAt:Date.now(),readAtAt:0};
+      else state.books[id].updatedAt=Date.now();
+      state.activeId=id; persist(); requestSync(2000,true);
       const ok=saveRaw(K_TEXT+id,raw);
       const note=$("bookNote");
       if(!ok&&!warned){warned=true;note.textContent=`“${f.name}” is too large to keep in this browser. It works now; after a reload, add it again and your place is restored.`;note.className="note warn"}
@@ -740,6 +909,573 @@ function renderLog(){
     :`<li class="empty">No sessions yet today.</li>`;
 }
 
+/* ---------- views (Focus / History tabs) ---------- */
+let view="focus", savedTop=0, restorePending=false;
+function showView(){
+  const v=location.hash==="#history"?"history":"focus";
+  if(v===view) return;
+  if(view==="focus") savedTop=$("sheet").scrollTop; // the sheet loses its scroll position while hidden
+  view=v; applyView(true);
+}
+function applyView(switched){
+  $("viewFocus").hidden=view!=="focus"; $("viewHistory").hidden=view!=="history";
+  $("tabFocus").setAttribute("aria-current",view==="focus"?"page":"false");
+  $("tabHistory").setAttribute("aria-current",view==="history"?"page":"false");
+  if(view==="focus"&&switched){ if(restorePending){restorePending=false;restoreReadPos()} else $("sheet").scrollTop=savedTop; }
+  else{renderHistory(); renderSyncPanel()}
+  tick(false);
+}
+window.addEventListener("hashchange",showView);
+
+/* ---------- history ---------- */
+const H={range:"30",q:"",groups:60,editing:null,confirming:null};
+const timeFmt=new Intl.DateTimeFormat([],{hour:"numeric",minute:"2-digit"});
+function timeRange(e){
+  if(!e.end) return timeFmt.format(e.start);
+  // formatRange adds full dates when a session crosses midnight; times alone read better in a day group.
+  try{if(timeFmt.formatRange&&dayKey(e.start)===dayKey(e.end)) return timeFmt.formatRange(e.start,e.end)}catch(err){}
+  return timeFmt.format(e.start)+" – "+timeFmt.format(e.end);
+}
+function dayLabel(ts){
+  const now=Date.now();
+  if(dayKey(ts)===dayKey(now)) return "Today";
+  if(dayKey(ts)===dayKey(dayStart(now,-1))) return "Yesterday";
+  const d=new Date(ts);
+  return d.toLocaleDateString([],{weekday:"short",month:"short",day:"numeric",year:d.getFullYear()===new Date().getFullYear()?undefined:"numeric"});
+}
+const taskName=e=>(e.task||"").trim()||"Untitled focus";
+const devName=id=>id?(state.devices[id]||"Other device"):"—";
+const sumOf=list=>({ms:list.reduce((a,e)=>a+(e.ms||0),0),n:list.length});
+const nSess=n=>n+(n===1?" session":" sessions");
+// Consecutive local days with a session, ending today or (if nothing yet today) yesterday.
+function streakOf(log,now){
+  const days=new Set(log.map(e=>dayKey(e.start)));
+  let t=dayStart(now); if(!days.has(dayKey(t))) t=dayStart(now,-1);
+  let n=0; while(days.has(dayKey(t))){n++;t=dayStart(t,-1)}
+  return n;
+}
+function rangeStart(now){
+  if(H.range!=="all") return dayStart(now,-(+H.range-1));
+  return state.log.length?dayStart(Math.min(...state.log.map(e=>e.start))):dayStart(now);
+}
+function filtered(now){
+  const from=rangeStart(now), q=H.q.trim().toLowerCase();
+  return state.log.filter(e=>e.start>=from&&(!q||taskName(e).toLowerCase().includes(q)));
+}
+function renderHistory(){
+  const now=Date.now(), log=state.log;
+  // Summary cards cover everything; the range and search below don't change them.
+  const since=d=>log.filter(e=>e.start>=dayStart(now,-(d-1)));
+  const cards=[["Today",sumOf(since(1))],["Last 7 days",sumOf(since(7))],["Last 30 days",sumOf(since(30))],["All time",sumOf(log)]];
+  const st=streakOf(log,now);
+  $("hStats").innerHTML=cards.map(([k,v])=>`<div class="stat"><span class="eyebrow">${k}</span><b>${hm(v.ms)}</b><span>${nSess(v.n)}</span></div>`).join("")
+    +`<div class="stat" id="hStreak"><span class="eyebrow">Streak</span><b>${st}</b><span>${st===1?"day":"days"} in a row</span></div>`;
+  document.querySelectorAll("#hRange .chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===H.range));
+  const list=filtered(now), tot=sumOf(list);
+  const rLabel=H.range==="all"?"All time":`Last ${H.range} days`;
+  $("hRangeSum").textContent=`${rLabel}${H.q.trim()?` · matching “${H.q.trim()}”`:""}: ${hm(tot.ms)} focused · ${nSess(tot.n)}`;
+  renderChart(list,now); renderTopTasks(list); renderSessions(list);
+}
+
+function renderChart(list,now){
+  const box=$("hChartBox"); $("hTip").hidden=true;
+  const days=[], idx={};
+  for(let t=rangeStart(now);t<=now;t=dayStart(t,1)){idx[dayKey(t)]=days.length;days.push({t,ms:0,plan:0,n:0})}
+  for(const e of list){const d=days[idx[dayKey(e.start)]]; if(d){d.ms+=e.ms||0;d.plan+=e.planned||0;d.n++}}
+  const H0=170, top=20, bot=24, ch=H0-top-bot;
+  const W=Math.max(box.clientWidth||600,days.length*8), slot=W/days.length, bw=Math.max(3,Math.min(slot*.66,34));
+  const max=Math.max(60000,...days.map(d=>Math.max(d.ms,d.plan)));
+  const y=v=>top+ch-v/max*ch;
+  let svg=`<line class="grid dash" x1="0" x2="${W}" y1="${top}" y2="${top}"/><text x="2" y="${top-6}">${hm(max)}</text><line class="grid" x1="0" x2="${W}" y1="${top+ch}" y2="${top+ch}"/>`;
+  const step=Math.ceil(60/slot);
+  days.forEach((d,i)=>{
+    const cx=slot*i+slot/2, x=cx-bw/2;
+    if(d.ms>0){const h=Math.max(2,d.ms/max*ch);svg+=`<rect class="cbar" data-i="${i}" x="${x.toFixed(1)}" y="${(top+ch-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2"/>`}
+    else svg+=`<rect class="zero" x="${x.toFixed(1)}" y="${top+ch-2}" width="${bw.toFixed(1)}" height="2"/>`;
+    if(d.plan>0) svg+=`<line class="plan" x1="${(x-2).toFixed(1)}" x2="${(x+bw+2).toFixed(1)}" y1="${y(d.plan).toFixed(1)}" y2="${y(d.plan).toFixed(1)}"/>`;
+    if((days.length-1-i)%step===0){
+      const lx=Math.min(W-22,Math.max(22,cx));
+      svg+=`<text x="${lx.toFixed(1)}" y="${H0-6}" text-anchor="middle">${new Date(d.t).toLocaleDateString([],{month:"short",day:"numeric"})}</text>`;
+    }
+    svg+=`<rect class="hit" data-i="${i}" x="${(slot*i).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H0}"/>`;
+  });
+  const total=days.reduce((a,d)=>a+d.ms,0);
+  $("hChart").innerHTML=`<svg class="chart" width="${W}" height="${H0}" viewBox="0 0 ${W} ${H0}" role="img" aria-label="Focused minutes per day: ${hm(total)} over ${days.length} days">${svg}</svg>`;
+  $("hChart").__days=days;
+  box.scrollLeft=box.scrollWidth; // newest days are on the right
+}
+function showTip(i){
+  const days=$("hChart").__days, d=days&&days[i]; if(!d) return;
+  const tip=$("hTip"), W=+$("hChart").querySelector("svg").getAttribute("width"), slot=W/days.length;
+  const date=new Date(d.t).toLocaleDateString([],{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+  tip.textContent=`${date} · ${d.n?hm(d.ms)+" · "+nSess(d.n)+(d.plan?" · planned "+hm(d.plan):""):"no sessions"}`;
+  tip.hidden=false;
+  const tw=tip.offsetWidth;
+  tip.style.left=Math.max(0,Math.min(W-tw,slot*i+slot/2-tw/2))+"px";
+  $("hChart").querySelectorAll(".cbar").forEach(r=>r.classList.toggle("on",r.dataset.i===String(i)));
+}
+function hideTip(){$("hTip").hidden=true;$("hChart").querySelectorAll(".cbar.on").forEach(r=>r.classList.remove("on"))}
+$("hChart").addEventListener("pointerover",e=>{const r=e.target.closest(".hit");if(r&&e.pointerType==="mouse")showTip(+r.dataset.i)});
+$("hChart").addEventListener("click",e=>{const r=e.target.closest(".hit");if(r)showTip(+r.dataset.i)});
+$("hChart").addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")hideTip()});
+
+function renderTopTasks(list){
+  const g=new Map();
+  for(const e of list){
+    const k=taskName(e).toLowerCase();
+    const v=g.get(k)||{name:taskName(e),ms:0,n:0,at:-Infinity};
+    v.ms+=e.ms||0; v.n++; g.set(k,v);
+    if(e.start>=v.at){v.at=e.start;v.name=taskName(e)} // the newest session's spelling is shown
+  }
+  const top=[...g.values()].sort((a,b)=>b.ms-a.ms).slice(0,8), max=top.length?top[0].ms||1:1;
+  $("hTop").innerHTML=top.length?top.map(t=>`<li><span class="tt-name">${esc(t.name)}</span><span class="tt-val">${hm(t.ms)} · ${t.n}</span><span class="tt-bar"><i style="width:${(t.ms/max*100).toFixed(1)}%"></i></span></li>`).join("")
+    :`<li class="hempty">No tasks in this range.</li>`;
+}
+
+function renderSessions(list){
+  const el=$("hList");
+  if(!state.log.length){
+    el.innerHTML=`<p class="hempty">No sessions yet. Each focus session you stop is listed here with its time, task, planned length and the sentences it unlocked. <a href="#focus">Start one on the Focus tab</a>.</p>`;
+    $("hMore").hidden=true; $("csvBtn").disabled=true; return;
+  }
+  $("csvBtn").disabled=!list.length;
+  $("csvBtn").textContent=`Export CSV (${list.length})`;
+  if(!list.length){el.innerHTML=`<p class="hempty">No sessions match this range${H.q.trim()?" and search":""}.</p>`;$("hMore").hidden=true;return}
+  const multiDev=new Set(state.log.map(e=>e.device).filter(Boolean)).size>1;
+  const groups=[], byDay={};
+  list.slice().sort((a,b)=>b.start-a.start).forEach(e=>{
+    const k=dayKey(e.start);
+    if(!byDay[k]){byDay[k]={t:e.start,items:[]};groups.push(byDay[k])}
+    byDay[k].items.push(e);
+  });
+  el.innerHTML=groups.slice(0,H.groups).map(g=>{
+    const t=sumOf(g.items);
+    return `<div class="daygroup"><div class="dayhead"><span>${dayLabel(g.t)}</span><span>${hm(t.ms)} · ${nSess(t.n)}</span></div><ol class="sessions">${g.items.map(e=>sessionRow(e,multiDev)).join("")}</ol></div>`;
+  }).join("");
+  $("hMore").hidden=groups.length<=H.groups;
+  const inp=el.querySelector(".rename-in"); if(inp){inp.focus();inp.select()}
+  const keep=el.querySelector("[data-act=keep]"); if(keep) keep.focus();
+}
+function sessionRow(e,multiDev){
+  const id=esc(e.id);
+  let plan="";
+  if(e.planned){
+    const diff=(e.ms||0)-e.planned;
+    const d=Math.round(diff/1000)*1000;
+    plan=`<span class="s-plan">of ${fmt(e.planned)} · ${d>0?`<b>+${fmt(d)}</b>`:d<0?`−${fmt(-d)}`:"on plan"}</span>`;
+  }
+  const sub=[e.earned===undefined?"—":(e.earned===1?"1 sentence":e.earned+" sentences"), e.bookName?esc(e.bookName):"—"];
+  if(multiDev) sub.push(esc(devName(e.device)));
+  const task=H.editing===e.id
+    ?`<input type="text" class="rename-in" maxlength="80" value="${esc(e.task||"")}" aria-label="Task name" data-id="${id}">`
+    :esc(taskName(e));
+  const conf=H.confirming===e.id?`<div class="confirm" role="alertdialog" aria-label="Delete session"><p>Delete this ${fmt(e.ms||0)} session${e.task?` on “${esc(e.task)}”`:""}? It will be removed from your history. ${e.earned?`The ${e.earned===1?"sentence":e.earned+" sentences"} it unlocked stay unlocked.`:"Unlocked sentences stay unlocked."}</p><div class="row"><button class="btn danger" type="button" data-act="really">Delete session</button><button class="btn quiet" type="button" data-act="keep">Keep it</button></div></div>`:"";
+  return `<li class="srow" data-id="${id}"><span class="s-time">${timeRange(e)}</span>
+    <div><div class="s-task">${task}</div><div class="s-sub">${sub.join(" · ")}</div></div>
+    <div class="s-side"><span class="s-dur">${fmt(e.ms||0)} ${plan}</span><span class="s-act"><button class="linkbtn" type="button" data-act="rename">Rename</button><button class="linkbtn del" type="button" data-act="del">Delete</button></span></div>${conf}</li>`;
+}
+function entryById(id){return state.log.find(e=>e.id===id)}
+// Saves the edited name into the entry; returns whether anything changed. The caller re-renders.
+function commitRename(id,val){
+  const e=entryById(id); H.editing=null;
+  if(!e||val.trim()===(e.task||"")) return false;
+  e.task=val.trim(); e.updatedAt=Date.now(); return true;
+}
+$("hList").addEventListener("click",ev=>{
+  const b=ev.target.closest("[data-act]"); if(!b) return;
+  const id=b.closest(".srow").dataset.id, act=b.dataset.act;
+  if(act==="rename"){H.editing=id;H.confirming=null;renderHistory()}
+  else if(act==="del"){H.confirming=id;H.editing=null;renderHistory()}
+  else if(act==="keep"){H.confirming=null;renderHistory();const r=$("hList").querySelector(`.srow[data-id="${CSS.escape(id)}"] [data-act=del]`);if(r)r.focus()}
+  else if(act==="really"){
+    H.confirming=null;
+    state.log=state.log.filter(e=>e.id!==id); state.deletedLog[id]=Date.now();
+    logChanged();
+  }
+});
+$("hList").addEventListener("keydown",ev=>{
+  if(!ev.target.classList.contains("rename-in")) return;
+  if(ev.key==="Enter"){ev.preventDefault();commitRename(ev.target.dataset.id,ev.target.value)?logChanged():renderHistory()}
+  else if(ev.key==="Escape"){ev.preventDefault();H.editing=null;renderHistory()}
+});
+// Leaving the field also saves. Re-render on the next turn so a click on another row's button still lands.
+$("hList").addEventListener("focusout",ev=>{
+  const t=ev.target; if(!t.classList.contains("rename-in")||H.editing!==t.dataset.id) return;
+  const changed=commitRename(t.dataset.id,t.value);
+  setTimeout(()=>{changed?logChanged():renderHistory()},0);
+});
+$("hRange").addEventListener("click",ev=>{const b=ev.target.closest("[data-r]");if(b){H.range=b.dataset.r;H.groups=60;renderHistory()}});
+$("hSearch").addEventListener("input",ev=>{H.q=ev.target.value;H.groups=60;renderHistory()});
+$("hMore").onclick=()=>{H.groups+=60;renderHistory()};
+let resizeT;
+window.addEventListener("resize",()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(view==="history")renderChart(filtered(Date.now()),Date.now())},200)});
+
+/* CSV export of the sessions currently shown (range + search). */
+function csvCell(v){v=v==null?"":String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function historyCsv(list){
+  const hhmm=ts=>{const d=new Date(ts);return pad2(d.getHours())+":"+pad2(d.getMinutes())};
+  const min=ms=>ms==null?"":(ms/60000).toFixed(1);
+  const rows=[["date","start","end","task","focused_min","planned_min","sentences","story","device"]];
+  list.slice().sort((a,b)=>a.start-b.start).forEach(e=>rows.push([dayKey(e.start),hhmm(e.start),e.end?hhmm(e.end):"",e.task||"",min(e.ms),min(e.planned),e.earned??"",e.bookName||"",e.device?devName(e.device):""]));
+  return rows.map(r=>r.map(csvCell).join(",")).join("\r\n")+"\r\n";
+}
+$("csvBtn").onclick=()=>{
+  const blob=new Blob(["\ufeff"+historyCsv(filtered(Date.now()))],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="sentence-by-sentence-history.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+};
+
+/* ---------- sync merge ---------- */
+// mergeSyncData is pure (no DOM, storage or clock) and commutative, associative and idempotent, so any order
+// of syncs converges. Every "pick one side" rule has a deterministic tie-break on canon() for equal timestamps.
+// Book records are never dropped: a book that lost to a removal moves to hiddenBooks, so its data still joins
+// correctly if it is re-added later (dropping it would make the result depend on merge order).
+const SYNC_FILE="sentence-by-sentence.json", SYNC_SCHEMA=1, SYNC_APP="sentence-by-sentence";
+const isNum=v=>typeof v==="number"&&isFinite(v);
+const isObj=v=>!!v&&typeof v==="object"&&!Array.isArray(v);
+function canon(v){
+  if(Array.isArray(v)) return "["+v.map(canon).join(",")+"]";
+  if(isObj(v)) return "{"+Object.keys(v).filter(k=>v[k]!==undefined).sort().map(k=>JSON.stringify(k)+":"+canon(v[k])).join(",")+"}";
+  return JSON.stringify(v===undefined?null:v);
+}
+function normEntry(e){
+  if(!isObj(e)||typeof e.id!=="string"||!e.id||!isNum(e.start)) return null;
+  const o={id:e.id,start:e.start,ms:isNum(e.ms)?e.ms:0,task:typeof e.task==="string"?e.task:"",updatedAt:isNum(e.updatedAt)?e.updatedAt:e.start};
+  for(const k of ["end","planned","earned"]) if(isNum(e[k])) o[k]=e[k];
+  for(const k of ["bookId","bookName","device"]) if(typeof e[k]==="string") o[k]=e[k];
+  return o;
+}
+function normBook(b){
+  if(!isObj(b)||!isNum(b.revealed)) return null;
+  const o={name:typeof b.name==="string"?b.name:"",revealed:Math.max(0,Math.floor(b.revealed)),carryMs:isNum(b.carryMs)?Math.max(0,b.carryMs):0,
+    updatedAt:isNum(b.updatedAt)?b.updatedAt:0,readAtAt:isNum(b.readAtAt)?b.readAtAt:0};
+  if(typeof b.author==="string"&&b.author) o.author=b.author;
+  if(typeof b.fileName==="string"&&b.fileName) o.fileName=b.fileName;
+  if(isNum(b.readAt)&&b.readAt>=0) o.readAt=Math.floor(b.readAt);
+  return o;
+}
+function normSettings(s){
+  if(!isObj(s)||!isNum(s.focusMin)||!isNum(s.perSec)||!isNum(s.breakMin)||(s.perUnit!=="min"&&s.perUnit!=="sec")) return null;
+  return {focusMin:s.focusMin,perSec:s.perSec,perUnit:s.perUnit,breakMin:s.breakMin,updatedAt:isNum(s.updatedAt)?s.updatedAt:0};
+}
+// x vs y by timestamp, then by canonical form; returns the winner.
+function lww(x,y,tx,ty){return tx!==ty?(tx>ty?x:y):(canon(x)>=canon(y)?x:y)}
+function joinBook(x,y){
+  const prog=(x.revealed>y.revealed||(x.revealed===y.revealed&&x.carryMs>=y.carryMs))?x:y;
+  const ra=v=>v.readAt===undefined?-1:v.readAt;
+  const rd=(x.readAtAt>y.readAtAt||(x.readAtAt===y.readAtAt&&ra(x)>=ra(y)))?x:y;
+  const meta=lww({name:x.name,author:x.author,fileName:x.fileName},{name:y.name,author:y.author,fileName:y.fileName},x.updatedAt,y.updatedAt);
+  const o={name:meta.name,revealed:prog.revealed,carryMs:prog.carryMs,updatedAt:Math.max(x.updatedAt,y.updatedAt),readAtAt:Math.max(x.readAtAt,y.readAtAt)};
+  if(meta.author) o.author=meta.author;
+  if(meta.fileName) o.fileName=meta.fileName;
+  if(rd.readAt!==undefined) o.readAt=rd.readAt;
+  return o;
+}
+function maxMap(into,m){if(isObj(m))for(const k in m)if(isNum(m[k]))into[k]=k in into?Math.max(into[k],m[k]):m[k]}
+const sortKeys=m=>{const o={};Object.keys(m).sort().forEach(k=>o[k]=m[k]);return o};
+function mergeSyncData(a,b){
+  const deletedLog={}, removedBooks={}, log={}, books={}, devices={};
+  let settings=null, updatedAt=0;
+  for(const d of [a,b]){
+    if(!isObj(d)) continue;
+    if(isNum(d.updatedAt)) updatedAt=Math.max(updatedAt,d.updatedAt);
+    maxMap(deletedLog,d.deletedLog); maxMap(removedBooks,d.removedBooks);
+    for(const raw of Array.isArray(d.log)?d.log:[]){
+      const e=normEntry(raw); if(!e) continue;
+      const c=log[e.id]; log[e.id]=c?lww(c,e,c.updatedAt,e.updatedAt):e;
+    }
+    for(const src of [d.books,d.hiddenBooks]) if(isObj(src)) for(const id in src){
+      const nb=normBook(src[id]); if(nb) books[id]=books[id]?joinBook(books[id],nb):nb;
+    }
+    const s=normSettings(d.settings);
+    if(s) settings=settings?lww(settings,s,settings.updatedAt,s.updatedAt):s;
+    if(isObj(d.devices)) for(const id in d.devices){
+      const n=d.devices[id]; if(typeof n!=="string") continue;
+      devices[id]=devices[id]===undefined||n>devices[id]?n:devices[id];
+    }
+  }
+  const out={app:SYNC_APP,schema:SYNC_SCHEMA,updatedAt,
+    log:Object.values(log).filter(e=>!(e.id in deletedLog)).sort((x,y)=>x.start-y.start||(x.id<y.id?-1:x.id>y.id?1:0)),
+    deletedLog:sortKeys(deletedLog),books:{},hiddenBooks:{},removedBooks:sortKeys(removedBooks),devices:sortKeys(devices)};
+  for(const id of Object.keys(books).sort()){
+    const kept=!(id in removedBooks)||books[id].updatedAt>removedBooks[id];
+    (kept?out.books:out.hiddenBooks)[id]=books[id];
+  }
+  if(settings) out.settings=settings;
+  return out;
+}
+// Local state as a sync doc. Only this device's own name is sent, so only its owner ever writes it.
+function toSyncDoc(){
+  const books={};
+  for(const id in state.books){const b=state.books[id];books[id]={name:b.name,author:b.author,fileName:b.fileName,revealed:b.revealed,carryMs:b.carryMs,updatedAt:b.updatedAt||0,readAt:b.readAt,readAtAt:b.readAtAt||0}}
+  return {app:SYNC_APP,schema:SYNC_SCHEMA,log:state.log,deletedLog:state.deletedLog,books,removedBooks:state.removedBooks,
+    settings:{focusMin:state.focusMin,perSec:state.perSec,perUnit:state.perUnit,breakMin:state.breakMin,updatedAt:state.settingsAt||0},
+    devices:{[device.id]:device.name}};
+}
+// Writes a merged doc back into local state, keeping local-only fields. Returns what changed, for the status line.
+function applySyncDoc(m){
+  const res={newSessions:0,storiesChanged:0,settingsChanged:false};
+  const act=state.activeId, prevReadAt=state.books[act]?state.books[act].readAtAt||0:0;
+  const had=new Set(state.log.map(e=>e.id));
+  res.newSessions=m.log.filter(e=>!had.has(e.id)).length;
+  state.log=m.log.map(e=>Object.assign({},e));
+  state.deletedLog=Object.assign({},m.deletedLog);
+  state.removedBooks=Object.assign({},m.removedBooks);
+  state.devices=Object.assign({},m.devices);
+  const hold=run.mode==="focus"?state.activeId:null; // never pull the open story out from under a running session
+  for(const id in m.books){
+    const r=m.books[id], b=state.books[id];
+    if(!b){state.books[id]=Object.assign({},r);res.storiesChanged++;continue}
+    if(b.revealed!==r.revealed||b.carryMs!==r.carryMs||b.readAt!==r.readAt||b.name!==r.name) res.storiesChanged++;
+    for(const k of ["name","author","fileName","revealed","carryMs","updatedAt","readAt","readAtAt"]){if(r[k]===undefined)delete b[k];else b[k]=r[k]}
+  }
+  for(const id of Object.keys(state.books)){
+    if(m.books[id]||id===hold||id==="sample") continue;
+    delete state.books[id]; delete texts[id]; res.storiesChanged++;
+    try{localStorage.removeItem(K_TEXT+id)}catch(e){}
+    if(state.activeId===id){state.activeId=Object.keys(state.books).find(x=>x!=="sample")||"sample";lastShown=-1}
+  }
+  const s=m.settings;
+  // Settings wait until the session ends: changing time per sentence mid-session would change what it earns.
+  if(s&&run.mode!=="focus"&&canon(s)!==canon({focusMin:state.focusMin,perSec:state.perSec,perUnit:state.perUnit,breakMin:state.breakMin,updatedAt:state.settingsAt||0})){
+    Object.assign(state,{focusMin:s.focusMin,perSec:s.perSec,perUnit:s.perUnit,breakMin:s.breakMin,settingsAt:s.updatedAt});
+    res.settingsChanged=true;
+  }
+  persist();
+  renderBookList(); renderLog(); if(view==="history") renderHistory();
+  if(res.settingsChanged&&run.mode==="idle"&&!$("controls").contains(document.activeElement)) renderControls();
+  tick(true);
+  const ab=state.books[act];
+  if(state.activeId===act&&ab&&(ab.readAtAt||0)>prevReadAt&&justOpened()){ if(view==="focus") restoreReadPos(); else restorePending=true; }
+  return res;
+}
+
+/* ---------- sync (GitHub gist) ---------- */
+// The token lives only in sbs-sync-v1 on this device. Never log it, and never put it in the state or the gist.
+const K_SYNC="sbs-sync-v1", GH="https://api.github.com";
+const sync=Object.assign({token:"",gistId:"",lastSyncAt:0,lastError:null,pending:false},load(K_SYNC,{}));
+const persistSync=()=>save(K_SYNC,sync);
+let syncBusy=false, syncAgain=false, syncTimer=null, syncDue=0, rateUntil=0, lastReport=null;
+class SyncError extends Error{constructor(kind,message,until){super(message);this.kind=kind;this.until=until}}
+async function gh(method,path,body){
+  const headers={Authorization:"Bearer "+sync.token,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};
+  if(body) headers["Content-Type"]="application/json";
+  let r;
+  try{r=await fetch(GH+path,{method,headers,cache:method==="GET"?"no-store":"default",body:body?JSON.stringify(body):undefined})}
+  catch(e){throw new SyncError("network","Offline — will sync when back online")}
+  let data=null; try{data=await r.json()}catch(e){}
+  if(r.ok) return data;
+  const h=n=>r.headers.get(n), msg=data&&typeof data.message==="string"?data.message:"";
+  if(r.status===401) throw new SyncError("auth","Token rejected");
+  if(r.status===404) throw new SyncError("notfound","Sync gist not found");
+  if(r.status===429||(r.status===403&&(h("x-ratelimit-remaining")==="0"||h("retry-after")||/rate limit/i.test(msg)))){
+    const ra=+h("retry-after"), reset=+h("x-ratelimit-reset");
+    const until=ra>0?Date.now()+ra*1000:reset>0?reset*1000:Date.now()+60000;
+    throw new SyncError("rate","GitHub rate limit — waiting",Math.max(until,Date.now()+5000));
+  }
+  if(r.status===403) throw new SyncError("forbidden","GitHub refused access. The token needs the gist scope.");
+  throw new SyncError("http","GitHub error "+r.status);
+}
+async function findOrCreateGist(){
+  for(let page=1;page<=50;page++){
+    const list=await gh("GET","/gists?per_page=100&page="+page);
+    if(!Array.isArray(list)) break;
+    const g=list.find(g=>g&&g.files&&g.files[SYNC_FILE]);
+    if(g) return g.id;
+    if(list.length<100) break;
+  }
+  const g=await gh("POST","/gists",{public:false,description:"Sentence by Sentence sync",
+    files:{[SYNC_FILE]:{content:JSON.stringify(mergeSyncData({app:SYNC_APP,schema:SYNC_SCHEMA},null),null,1)}}});
+  if(!g||!g.id) throw new SyncError("http","GitHub didn't return the new gist");
+  return g.id;
+}
+async function readGist(id){
+  const g=await gh("GET","/gists/"+encodeURIComponent(id));
+  const f=g&&g.files&&g.files[SYNC_FILE];
+  if(!f) return {};
+  let text=f.content;
+  if(f.truncated){ // over ~1 MB the API cuts the content; the raw file has all of it
+    if(typeof f.raw_url!=="string"||!/^https:\/\/gist\.githubusercontent\.com\//.test(f.raw_url)) throw new SyncError("http","Couldn't read the full sync file");
+    let r; try{r=await fetch(f.raw_url,{cache:"no-store"})}catch(e){throw new SyncError("network","Offline — will sync when back online")}
+    if(!r.ok) throw new SyncError("http","GitHub error "+r.status);
+    text=await r.text();
+  }
+  if(typeof text!=="string"||!text.trim()) return {};
+  let doc; try{doc=JSON.parse(text)}catch(e){throw new SyncError("corrupt","The sync file isn't valid JSON, so it was left untouched")}
+  if(!isObj(doc)||(doc.app!==undefined&&doc.app!==SYNC_APP)) throw new SyncError("corrupt","The sync gist holds something else, so it was left untouched");
+  if(isNum(doc.schema)&&doc.schema>SYNC_SCHEMA) throw new SyncError("schema","The sync file is from a newer version of this page. Update this copy to keep syncing.");
+  return doc;
+}
+const syncKey=d=>canon(Object.assign({},d,{updatedAt:0}));
+// One cycle: pull, merge into local, save, push only if the merged result differs from what was pulled.
+async function runSync(){
+  if(!sync.token) return null;
+  if(syncBusy){syncAgain=true;return null}
+  if(rateUntil>Date.now()){scheduleSyncAt(rateUntil);return null}
+  syncBusy=true; renderSyncStatus();
+  let report=null;
+  try{
+    if(!sync.gistId){sync.gistId=await findOrCreateGist();persistSync()}
+    const remote=mergeSyncData(await readGist(sync.gistId),null);
+    const merged=mergeSyncData(toSyncDoc(),remote);
+    merged.devices[device.id]=device.name;
+    report=applySyncDoc(merged);
+    if(syncKey(merged)!==syncKey(remote)){
+      merged.updatedAt=Date.now();
+      await gh("PATCH","/gists/"+encodeURIComponent(sync.gistId),{files:{[SYNC_FILE]:{content:JSON.stringify(merged,null,1)}}});
+    }
+    Object.assign(sync,{lastSyncAt:Date.now(),lastError:null,pending:false});
+    lastReport=report;
+  }catch(e){
+    const err=e instanceof SyncError?e:new SyncError("http","Sync failed: "+(e&&e.message||"unknown error"));
+    sync.lastError={kind:err.kind,message:err.message,at:Date.now()};
+    if(err.kind==="network") sync.pending=true;
+    if(err.kind==="rate"){rateUntil=err.until;scheduleSyncAt(rateUntil)}
+  }finally{
+    syncBusy=false; persistSync(); renderSyncStatus();
+  }
+  if(syncAgain){syncAgain=false;return runSync()}
+  return report;
+}
+function scheduleSyncAt(t){
+  if(syncTimer&&syncDue<=t) return; // an earlier run is already due
+  clearTimeout(syncTimer); syncDue=t;
+  syncTimer=setTimeout(()=>{syncTimer=null;runSync()},Math.max(0,t-Date.now()));
+}
+// change=true marks a local edit still to be pushed. A rejected token stops automatic retries until it's replaced.
+function requestSync(delay,change){
+  if(!sync.token) return;
+  if(change&&!sync.pending){sync.pending=true;persistSync()}
+  if(sync.lastError&&sync.lastError.kind==="auth") return;
+  scheduleSyncAt(Date.now()+delay);
+}
+// After the gist was deleted: forget it and make (or find) a new one.
+function createNewGist(){sync.gistId="";sync.lastError=null;persistSync();return runSync()}
+
+/* ---------- sync UI ---------- */
+let syncNote=null, panelMode=null; // syncNote: {text, cls} shown under the panel after an action
+function ago(ts){
+  const s=Math.max(0,Math.round((Date.now()-ts)/1000));
+  if(s<45) return "just now";
+  const m=Math.round(s/60); if(m<60) return m+" min ago";
+  const h=Math.round(m/60); if(h<24) return h+" h ago";
+  return new Date(ts).toLocaleDateString([],{month:"short",day:"numeric"});
+}
+function syncChipState(){
+  if(!sync.token) return ["Sync off",""];
+  if(syncBusy) return ["Syncing…","sync-busy"];
+  const e=sync.lastError;
+  if(e&&e.kind==="auth") return ["Token rejected","sync-err"];
+  if((e&&e.kind==="network")||(sync.pending&&!navigator.onLine)) return ["Offline — pending","sync-warn"];
+  if(e&&e.kind==="rate") return ["Sync paused","sync-warn"];
+  if(e) return ["Sync error","sync-err"];
+  if(sync.lastSyncAt) return ["Synced "+ago(sync.lastSyncAt),"sync-ok"];
+  return ["Sync pending","sync-busy"];
+}
+function renderSyncChip(){
+  const [t,cls]=syncChipState(), c=$("syncChip");
+  if(c.textContent!==t) c.textContent=t;
+  const k="hchip "+cls; if(c.className!==k) c.className=k;
+}
+function reportText(r){
+  if(!r) return "";
+  const parts=[];
+  if(r.newSessions) parts.push(`Merged ${r.newSessions} session${r.newSessions===1?"":"s"} from other devices`);
+  if(r.storiesChanged) parts.push(`${r.storiesChanged} ${r.storiesChanged===1?"story":"stories"} updated`);
+  if(r.settingsChanged) parts.push("timer settings updated");
+  return parts.length?parts.join(" · "):"Everything was already up to date.";
+}
+const syncMode=()=>!sync.token?"setup":sync.lastError&&sync.lastError.kind==="auth"?"auth":"connected";
+function renderSyncPanel(){
+  const mode=syncMode(), body=$("syncBody"); panelMode=mode;
+  const secretNote=`<p class="note">Your sync data is kept in a <b>secret gist</b> on your GitHub account. Secret gists are unlisted, not private: anyone who has the link can read it. It holds task names, story titles and timing, never story text or your token.</p>`;
+  if(mode!=="connected"){
+    body.innerHTML=`${mode==="auth"?`<p>GitHub rejected the saved token. It may have expired or been revoked. Paste a new one; everything on this device is kept.</p>`:`<p>Sync your session history, story progress and timer settings between browsers through your own GitHub account. Story files stay on each device; add a story's file on each device to read it there.</p>`}
+      <ol>
+        <li>On GitHub, go to Settings → Developer settings → Personal access tokens → Tokens (classic) → <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Sentence%20by%20Sentence%20sync" target="_blank" rel="noopener">Generate new token</a>. Tick <b>only</b> <code>gist</code> and pick an expiry.</li>
+        <li>Paste the token here, and do the same on each device you use.</li>
+      </ol>
+      <div class="field"><label for="tokIn">GitHub token</label>
+        <div class="tokrow"><input type="password" id="tokIn" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="ghp_…">
+          <button class="btn quiet" type="button" id="tokShow" aria-pressed="false">Show</button>
+          <button class="btn" type="button" id="tokGo">${mode==="auth"?"Use new token":"Connect"}</button>
+          ${mode==="auth"?`<button class="btn quiet" type="button" id="syncOff">Disconnect</button>`:""}</div></div>
+      <p class="note">The token is saved in this browser only. With just the <code>gist</code> scope it can read and write your gists and nothing else, and you can revoke it on GitHub at any time. Don't connect on a shared computer.</p>
+      ${secretNote}`;
+    $("tokShow").onclick=()=>{const i=$("tokIn"),show=i.type==="password";i.type=show?"text":"password";$("tokShow").textContent=show?"Hide":"Show";$("tokShow").setAttribute("aria-pressed",show)};
+    $("tokGo").onclick=connectSync;
+    $("tokIn").onkeydown=e=>{if(e.key==="Enter")connectSync()};
+  }else{
+    const gist=sync.gistId?`<a href="https://gist.github.com/${encodeURIComponent(sync.gistId)}" target="_blank" rel="noopener">gist.github.com/${esc(sync.gistId)}</a>`:"Not created yet";
+    body.innerHTML=`<dl class="sync-facts">
+        <dt><label for="devName">This device</label></dt><dd><input type="text" id="devName" maxlength="40" value="${esc(device.name)}"></dd>
+        <dt>Last sync</dt><dd id="syncLast"></dd>
+        <dt>Sync file</dt><dd>${gist}</dd>
+      </dl>
+      <div class="row"><button class="btn" type="button" id="syncNowBtn">Sync now</button><button class="btn quiet" type="button" id="syncOff">Disconnect</button></div>
+      <p class="note">Disconnecting forgets the token and gist on this device only. Your history and progress stay here, and the gist stays on GitHub.</p>
+      ${secretNote}`;
+    $("syncNowBtn").onclick=()=>{syncNote=null;runSync().then(r=>{if(r)syncNote={text:reportText(r)};renderSyncStatus()})};
+    $("devName").onchange=e=>{
+      device.name=e.target.value.trim().slice(0,40)||uaName(); e.target.value=device.name;
+      save(K_DEVICE,device); state.devices[device.id]=device.name; persist(); requestSync(2000,true);
+      if(view==="history") renderSessions(filtered(Date.now()));
+    };
+  }
+  const off=$("syncOff"); if(off) off.onclick=disconnectSync;
+  renderSyncStatus();
+}
+// Updates the chip and the panel's status lines in place, without rebuilding inputs.
+function renderSyncStatus(){
+  renderSyncChip();
+  if(syncMode()!==panelMode){ if(panelMode!==null) renderSyncPanel(); return; }
+  const last=$("syncLast");
+  if(last) last.textContent=syncBusy?"Syncing…":sync.lastSyncAt?`${ago(sync.lastSyncAt)} (${new Date(sync.lastSyncAt).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})})`:"Not yet";
+  const now=$("syncNowBtn"); if(now) now.disabled=syncBusy;
+  const go=$("tokGo"); if(go) go.disabled=syncBusy;
+  const msg=$("syncMsg"), e=sync.lastError;
+  if(syncBusy&&!e){msg.className="sync-msg";msg.textContent="Syncing…";return}
+  if(e&&sync.token){
+    msg.className="sync-msg "+(e.kind==="network"||e.kind==="rate"?"warn":"err");
+    let text=e.message;
+    if(e.kind==="rate") text=`GitHub's rate limit was reached. Sync resumes at ${new Date(rateUntil||Date.now()).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}.`;
+    if(e.kind==="notfound") text="The sync gist was deleted or can't be reached with this token.";
+    if(e.kind==="auth") text="Token rejected. Paste a new token above.";
+    msg.innerHTML=esc(text)+(e.kind==="notfound"?` <button class="btn" type="button" id="newGist">Create a new sync gist</button>`:"");
+    const ng=$("newGist"); if(ng) ng.onclick=()=>{syncNote=null;createNewGist().then(r=>{if(r)syncNote={text:"Created a new sync gist with this device's data."};renderSyncPanel()})};
+    return;
+  }
+  msg.className="sync-msg"+(syncNote&&syncNote.cls?" "+syncNote.cls:"");
+  msg.textContent=syncNote?syncNote.text:"";
+}
+function connectSync(){
+  const t=$("tokIn").value.trim();
+  if(!t){syncNote={text:"Paste a token first.",cls:"warn"};renderSyncStatus();$("tokIn").focus();return}
+  const fresh=!sync.token;
+  Object.assign(sync,{token:t,lastError:null,pending:false}); if(fresh) Object.assign(sync,{gistId:"",lastSyncAt:0});
+  rateUntil=0; persistSync(); syncNote=null;
+  renderSyncPanel();
+  runSync().then(r=>{
+    if(r) syncNote={text:(fresh?"Connected. ":"")+reportText(r)};
+    renderSyncPanel();
+  });
+}
+function disconnectSync(){
+  clearTimeout(syncTimer); syncTimer=null; rateUntil=0;
+  Object.assign(sync,{token:"",gistId:"",lastSyncAt:0,lastError:null,pending:false}); persistSync();
+  syncNote={text:"Disconnected. Everything stays on this device; the gist is still on GitHub."};
+  renderSyncPanel();
+}
+$("syncChip").onclick=e=>{
+  e.preventDefault();
+  if(location.hash!=="#history") location.hash="#history";
+  showView(); // hashchange fires later; switch now so the panel is visible to scroll to
+  requestAnimationFrame(()=>{const p=$("syncPanel");p.scrollIntoView({block:"start",behavior:"auto"});p.focus({preventScroll:true})});
+};
+window.addEventListener("online",()=>{if(sync.pending)requestSync(0)});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)requestSync(0)});
+
 /* ---------- themes ---------- */
 const SKINS=[
   {id:"",name:"Sage (auto)",a:"#e9eee9",b:"#101816"},
@@ -763,8 +1499,11 @@ applySkin();
 if(!["idle","focus","summary","break"].includes(run.mode)) run={mode:"idle"};
 if(run.mode==="focus"&&run.running) holdWake(true);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&run.mode==="focus"&&run.running)holdWake(true)});
-renderBookList(); renderControls(); renderLog(); tick(true);
+view=location.hash==="#history"?"history":"focus";
+renderBookList(); renderControls(); renderLog(); tick(true); applyView(false);
 setInterval(()=>tick(false),250);
+if(location.hash.includes("selftest")) window.__sbsTest={mergeSyncData};
+requestSync(0);
 })();
 </script>
 
